@@ -1,0 +1,65 @@
+[core]
+  whitespace = blank-at-eol,blank-at-eof,space-before-tab
+	#pager = diff-so-fancy | less --tabs=4 -RF
+  pager = delta
+  editor = code --wait
+[pull]
+  rebase = false
+[alias]
+  #Basic Commands
+  st = status -uno
+  s = status -s -uno
+  br = branch
+  sw = switch
+  d = diff
+  dc = diff --cached
+  co = checkout
+  cm = commit
+  dt = difftool
+  type = cat-file -t
+  dump = cat-file -p
+  #History
+  ls = log --pretty=format:'%C(yellow)%h%C(cyan)%d %C(dim red)%as %C(reset)%s%C(blue) [%an]' --decorate --graph
+  ll = log --pretty=format:'%C(yellow)%h%C(cyan)%d %C(dim red)%ar %C(reset)%s%C(blue) [%an]' --decorate --graph --numstat
+[filter "lfs"]
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  process = git-lfs filter-process
+  required = true
+[color]
+  diff = auto
+  status = auto
+  branch = auto
+  interactive = auto
+  ui = true
+  pager = true
+
+# Using difftastic as difftool
+[diff]
+  tool = difftastic
+[difftool]
+  prompt = false
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+[pager]
+  difftool = true
+
+# Using diff-so-fancy as default paged diff
+[interactive]
+  diffFilter = diff-so-fancy --patch
+[color "diff-highlight"]
+  oldNormal = red bold
+  oldHighlight = red bold 52
+  newNormal = green bold
+  newHighlight = green bold 22
+[color "diff"]
+  meta = 11
+  frag = magenta bold
+  func = 146 bold
+  commit = yellow bold
+  old = red bold
+  new = green bold
+  whitespace = red reverse
+[diff-so-fancy]
+  markEmptyLines = true
+  changeHunkIndicators = false

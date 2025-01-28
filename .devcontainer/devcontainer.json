@@ -1,0 +1,140 @@
+{
+    "name": "Address Sanitation Service",
+    // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+    "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm", // pinning a OS version
+    "features": {
+      "ghcr.io/devcontainers/features/azure-cli:1": {},
+      "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+      "ghcr.io/devcontainers-contrib/features/poetry:latest": {},
+      "ghcr.io/devcontainers-contrib/features/zsh-plugins:0": {
+        "plugins": "python poetry gitfast git-extras command-not-found colorize colored-man-pages"
+      },
+      "ghcr.io/devcontainers-contrib/features/pipx-package:1": {
+        "package": "jinja2-cli"
+      },
+      "ghcr.io/devcontainers-contrib/features/bin:1": {}, // for any binary release installation
+      "ghcr.io/devcontainers-contrib/features/neovim-apt-get:1": {}
+    },
+    // "hostRequirements": {
+    //  "cpus": 4,
+    //  "memory": "16gb",
+    //  "storage": "32gb"
+    // },
+    // forward ports
+    "forwardPorts": [
+      8080 // Address Sanitation Service
+    ],
+    // labels for forwarded ports
+    "portsAttributes": {
+      "8080": {
+        "label": "Address Sanitation Service"
+      }
+    },
+    // set container specific settings
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "[markdown]": {
+            "editor.formatOnSave": true,
+            "editor.formatOnSaveMode": "modificationsIfAvailable",
+            "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+          },
+          "files.associations": {
+            "*.env": "plaintext"
+          },
+          // This Glob should be the same as .github/workflows/linter.yaml Markdownlint
+          "markdownlint.lintWorkspaceGlobs": [
+            "!**/.git",
+            "!**/.github/",
+            "!CHANGELOG.md",
+            "!CONTRIBUTING.md",
+            "!LICENSE"
+          ],
+          "terminal.integrated.defaultProfile.linux": "zsh",
+          "editor.inlineSuggest.enabled": true,
+          "editor.copyWithSyntaxHighlighting": false,
+          "editor.wordWrap": "on",
+          "editor.linkedEditing": true,
+          "editor.renderWhitespace": "selection",
+          "editor.renderControlCharacters": true,
+          "editor.rulers": [
+            79,
+            118
+          ],
+          "search.exclude": {
+            "**/node_modules": true,
+            "**/bower_components": true,
+            "**/env": true,
+            "**/venv": true,
+            "**/.env": true,
+            "**/.venv": true,
+            "**/.pytest_cache*": true,
+            "**/__pycache__": true,
+            "**/.mypy_cache": true
+          },
+          "files.exclude": {
+            "**/env": true,
+            "**/venv": true,
+            "**/.env": true,
+            "**/.venv": true,
+            "**/.pytest_cache*": true,
+            "**/.mypy_cache": true,
+            "**/__pycache__": true
+          },
+          "editor.guides.highlightActiveIndentation": true,
+          "editor.guides.highlightActiveBracketPair": true,
+          "editor.bracketPairColorization.enabled": true,
+          "editor.guides.bracketPairs": "active",
+          "files.trimTrailingWhitespace": true,
+          "files.trimFinalNewlines": true,
+          "files.insertFinalNewline": true,
+          "shellcheck.enable": true,
+          "shellcheck.enableQuickFix": true,
+          "shellcheck.ignoreFileSchemes": [
+            "git",
+            "gitfs",
+            "output",
+            "test"
+          ],
+          "[jsonc]": {
+            "editor.defaultFormatter": "vscode.json-language-features"
+          },
+          "[python]": {
+            "editor.defaultFormatter": "ms-python.black-formatter"
+          }
+        },
+        // Install extensions
+        "extensions": [
+          "stkb.rewrap",
+          "redhat.vscode-yaml",
+          "davidanson.vscode-markdownlint",
+          "visualstudioexptteam.vscodeintellicode",
+          "humao.rest-client",
+          "eamodio.gitlens",
+          "gruntfuggly.todo-tree",
+          "timonwong.shellcheck",
+          "bierner.markdown-mermaid",
+          "github.vscode-github-actions",
+          "pomdtr.excalidraw-editor",
+          "ms-azuretools.vscode-bicep",
+          "tamasfe.even-better-toml",
+          "github.copilot",
+          // Python specific
+          "ms-python.python",
+          "ms-python.debugpy",
+          "kevinrose.vsc-python-indent",
+          "donjayamanne.python-environment-manager",
+          "njpwerner.autodocstring",
+          "samuelcolvin.jinjahtml", // replacing wholroyd.jinja, since its unmaintained
+          //Promptflow
+          "ms-toolsai.vscode-ai",
+          "ms-toolsai.jupyter",
+          "prompt-flow.prompt-flow",
+          "ms-python.black-formatter"
+        ]
+      }
+    },
+    // Run Bash scripts
+    // "postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install v20.11.1",
+    "onCreateCommand": "/bin/bash ./.devcontainer/on-create.bash"
+  }
