@@ -1,5 +1,5 @@
 {
-    "name": "Address Sanitation Service",
+    "name": "Address Sanitization Service",
     // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
     "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm", // pinning a OS version
     "features": {
@@ -27,13 +27,14 @@
     // labels for forwarded ports
     "portsAttributes": {
       "8080": {
-        "label": "Address Sanitation Service"
+        "label": "Address Sanitization Service"
       }
     },
     // set container specific settings
     "customizations": {
       "vscode": {
         "settings": {
+          "workbench.iconTheme": "material-icon-theme",
           "[markdown]": {
             "editor.formatOnSave": true,
             "editor.formatOnSaveMode": "modificationsIfAvailable",
@@ -105,6 +106,7 @@
         },
         // Install extensions
         "extensions": [
+          "PKief.material-icon-theme",
           "stkb.rewrap",
           "redhat.vscode-yaml",
           "davidanson.vscode-markdownlint",
