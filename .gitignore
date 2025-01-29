@@ -1,0 +1,29 @@
+# ----------------------------
+# Python Bytecode
+# ----------------------------
+*.py[cod]
+__pycache__/
+__pycache__/*
+
+# ----------------------------
+# Distribution / Packaging
+# ----------------------------
+build/
+dist/
+*.egg-info/
+
+# ----------------------------
+# Virtual Environments
+# ----------------------------
+venv/
+.venv/
+
+# ----------------------------
+# Environment Files
+# ----------------------------
+# Ignore .env in any subdirectory
+**/.env
+
+# Alternatively, ignore all .env files with patterns (optional):
+#.env
+#.env.*
