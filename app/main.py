@@ -13,10 +13,6 @@ from datetime import datetime
 AZURE_MAPS_KEY = os.getenv("AZURE_MAPS_KEY", "YOUR_AZURE_MAPS_KEY")
 MAPBOX_MAPS_KEY = os.getenv("MAPBOX_MAPS_KEY", "YOUR_MAPBOX_MAPS_KEY")
 
-# print(f'Azure API key: {AZURE_MAPS_KEY}')
-
-# print(f'Mapbox API key: {MAPBOX_MAPS_KEY}')
-
 # ========================
 # Request Model
 # ========================

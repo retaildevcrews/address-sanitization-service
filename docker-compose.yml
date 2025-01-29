@@ -10,3 +10,4 @@ services:
     # (You can also use .env or secrets if you prefer.)
     environment:
       - AZURE_MAPS_KEY=${AZURE_MAPS_KEY:-YOUR_AZURE_MAPS_KEY}
+      - MAPBOX_MAPS_KEY=${MAPBOX_MAPS_KEY:-MAPBOX_MAPS_KEY}
