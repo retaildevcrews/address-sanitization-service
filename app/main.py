@@ -118,7 +118,7 @@ def sanitize_address(payload: AddressRequest):
     # Sort results by descending score (so highest confidence is first)
     sorted_results = sorted(results, key=lambda r: r.get("score", 0.0), reverse=True)
 
-    # 4. Build the list of AddressResult objects
+    # Build the list of AddressResult objects
     address_objects = []
     for result in sorted_results:
         address_info = result.get("address", {})
