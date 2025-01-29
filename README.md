@@ -91,8 +91,7 @@ http POST localhost:8000/api/v1/address \
         "lat": 47.641673,
         "lon": -122.125648
       },
-      "serviceUsed": "azure",
-      "status": "SUCCESS"
+      "serviceUsed": "azure"
     }
   ],
   "metadata": {
