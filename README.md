@@ -34,7 +34,7 @@ This repository contains a **FastAPI** application that sanitizes addresses usin
 1. Create `.env` file in project root:
 
 ```bash
-echo "AZURE_MAPS_KEY=your_actual_key_here" > .env
+echo "AZURE_MAPS_KEY=your_actual_key_here" > credentials.env
 ```
 
 if the `.env` file already exists to add a new variable to it, you can use the echo command with the `>>` operator
@@ -52,8 +52,8 @@ echo "MAPBOX_MAPS_KEY=your_actual_key_here" >> .env
 docker compose up --build
 
 # Option 2: Direct execution
-
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+poetry install
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Access endpoints at:

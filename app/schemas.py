@@ -1,7 +1,10 @@
 # app/schemas.py
+
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel, Field
+
+VALID_STRATEGIES = ["azure", "google", "mapbox"]
 
 # ========================
 # Request Schema
@@ -20,9 +23,9 @@ class AddressRequest(BaseModel):
         description="ISO 3166-1 alpha-2 country code"
     )
     strategy: str = Field(
-        "azure",
+        default="azure",
         example="azure",
-        description="Geocoding strategy to use (azure, google, etc.)"
+        description=f"Geocoding service provider to use. Options: {', '.join(VALID_STRATEGIES)}"
     )
 
     class Config:
@@ -38,29 +41,49 @@ class AddressRequest(BaseModel):
 # Component Schemas
 # ========================
 class Coordinates(BaseModel):
-    lat: float = Field(..., example=47.641673)
-    lon: float = Field(..., example=-122.125648)
+    lat: float = Field(
+        ...,
+        example=47.641673,
+        description="Latitude in decimal degrees (WGS 84)"
+    )
+    lon: float = Field(
+        ...,
+        example=-122.125648,
+        description="Longitude in decimal degrees (WGS 84)"
+    )
 
 class AddressPayload(BaseModel):
-    streetNumber: str = Field(..., example="1", description="Street number component")
+    streetNumber: str = Field(
+        ...,
+        example="1",
+        description="Numeric portion of street address"
+    )
     streetName: str = Field(
         ...,
         example="Northeast One Microsoft Way",
-        description="Full street name including directionals"
+        description="Official street name including direction prefix/suffix"
     )
-    municipality: str = Field(..., example="Redmond", description="City or town name")
+    municipality: str = Field(
+        ...,
+        example="Redmond",
+        description="Primary municipal jurisdiction (city/town)"
+    )
     municipalitySubdivision: str = Field(
-        "",
+        default="",
         example="King County",
-        description="County or district within municipality"
+        description="Secondary municipal area (county/district)"
     )
-    postalCode: str = Field(..., example="98052", description="ZIP/postal code")
+    postalCode: str = Field(
+        ...,
+        example="98052",
+        description="Postal code in local format"
+    )
     countryCode: str = Field(
         ...,
         min_length=2,
         max_length=3,
         example="US",
-        description="ISO country code (2 or 3 character)"
+        description="ISO country code (2 or 3 character format)"
     )
 
 class AddressResult(BaseModel):
@@ -69,29 +92,58 @@ class AddressResult(BaseModel):
         ge=0,
         le=1,
         example=0.9965,
-        description="Confidence score from 0 (low) to 1 (high)"
+        description="Normalized confidence score (1 = highest certainty)"
     )
-    address: AddressPayload
+    address: AddressPayload = Field(
+        ...,
+        description="Structured address components"
+    )
     freeformAddress: str = Field(
         ...,
         example="1 Microsoft Way, Redmond, WA 98052",
-        description="Formatted full address string"
+        description="Complete address formatted per provider standards"
     )
-    coordinates: Coordinates
-    serviceUsed: str = Field(..., example="azure", description="Geocoding provider name")
+    coordinates: Coordinates = Field(
+        ...,
+        description="Geographic coordinates of the location"
+    )
+    serviceUsed: str = Field(
+        ...,
+        example="azure",
+        description="Identifier of the geocoding service provider"
+    )
 
 class Metadata(BaseModel):
-    query: str = Field(..., description="Original input query string")
-    country: str = Field(..., description="Requested country filter")
-    timestamp: datetime = Field(..., description="UTC timestamp of response")
-    totalResults: int = Field(..., ge=0, description="Total number of matches found")
+    query: str = Field(
+        ...,
+        description="Original address query as received by the API"
+    )
+    country: str = Field(
+        ...,
+        description="Country code filter used in the search"
+    )
+    timestamp: datetime = Field(
+        ...,
+        description="UTC timestamp of API response generation"
+    )
+    totalResults: int = Field(
+        ...,
+        ge=0,
+        description="Total number of matching addresses found"
+    )
 
 # ========================
 # Response Schema
 # ========================
 class AddressResponse(BaseModel):
-    metadata: Metadata
-    addresses: List[AddressResult]
+    metadata: Metadata = Field(
+        ...,
+        description="Summary information about the request"
+    )
+    addresses: List[AddressResult] = Field(
+        ...,
+        description="Ordered list of geocoding results (highest confidence first)"
+    )
 
     class Config:
         json_schema_extra = {
@@ -108,7 +160,7 @@ class AddressResponse(BaseModel):
                         "streetNumber": "1",
                         "streetName": "Northeast One Microsoft Way",
                         "municipality": "Redmond",
-                        "municipalitySubdivision": "",
+                        "municipalitySubdivision": "King County",
                         "postalCode": "98052",
                         "countryCode": "US"
                     },
