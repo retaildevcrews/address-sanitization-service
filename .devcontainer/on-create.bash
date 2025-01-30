@@ -5,8 +5,6 @@ echo_status "on-create start"
 pip install --no-cache-dir ipython ipykernel
 pip install "black[jupyter]"
 pip install isort
-pip install --upgrade pip wheel
-pip install httpie
 
 # only run apt upgrade on pre-build
 sudo apt-get update
@@ -15,6 +13,9 @@ then
     echo_status "apt upgrading"
     sudo apt-get upgrade -y
 fi
+
+# install httpie
+sudo apt-get install -y httpie
 
 # setup easy git aliases
 cp .devcontainer/gitconfig-base ~/.gitconfig
