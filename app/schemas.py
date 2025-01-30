@@ -1,21 +1,22 @@
 # app/schemas.py
+
 from datetime import datetime
 from typing import List
 from pydantic import BaseModel, Field
 
-VALID_STRATEGIES = ["azure", "google"]
+VALID_STRATEGIES = ["azure", "google", "mapbox"]
 
 # ========================
 # Request Schema
 # ========================
 class AddressRequest(BaseModel):
     address: str = Field(
-        required=True,
+        ...,
         example="1 Microsoft Way, Redmond, WA 98052",
         description="Free-form address string to geocode"
     )
     country_code: str = Field(
-        required=True,
+        ...,
         min_length=2,
         max_length=2,
         example="US",
@@ -41,29 +42,29 @@ class AddressRequest(BaseModel):
 # ========================
 class Coordinates(BaseModel):
     lat: float = Field(
-        required=True,
+        ...,
         example=47.641673,
         description="Latitude in decimal degrees (WGS 84)"
     )
     lon: float = Field(
-        required=True,
+        ...,
         example=-122.125648,
         description="Longitude in decimal degrees (WGS 84)"
     )
 
 class AddressPayload(BaseModel):
     streetNumber: str = Field(
-        required=True,
+        ...,
         example="1",
         description="Numeric portion of street address"
     )
     streetName: str = Field(
-        required=True,
+        ...,
         example="Northeast One Microsoft Way",
         description="Official street name including direction prefix/suffix"
     )
     municipality: str = Field(
-        required=True,
+        ...,
         example="Redmond",
         description="Primary municipal jurisdiction (city/town)"
     )
@@ -73,12 +74,12 @@ class AddressPayload(BaseModel):
         description="Secondary municipal area (county/district)"
     )
     postalCode: str = Field(
-        required=True,
+        ...,
         example="98052",
         description="Postal code in local format"
     )
     countryCode: str = Field(
-        required=True,
+        ...,
         min_length=2,
         max_length=3,
         example="US",
@@ -87,46 +88,46 @@ class AddressPayload(BaseModel):
 
 class AddressResult(BaseModel):
     confidenceScore: float = Field(
-        required=True,
+        ...,
         ge=0,
         le=1,
         example=0.9965,
         description="Normalized confidence score (1 = highest certainty)"
     )
     address: AddressPayload = Field(
-        required=True,
+        ...,
         description="Structured address components"
     )
     freeformAddress: str = Field(
-        required=True,
+        ...,
         example="1 Microsoft Way, Redmond, WA 98052",
         description="Complete address formatted per provider standards"
     )
     coordinates: Coordinates = Field(
-        required=True,
+        ...,
         description="Geographic coordinates of the location"
     )
     serviceUsed: str = Field(
-        required=True,
+        ...,
         example="azure",
         description="Identifier of the geocoding service provider"
     )
 
 class Metadata(BaseModel):
     query: str = Field(
-        required=True,
+        ...,
         description="Original address query as received by the API"
     )
     country: str = Field(
-        required=True,
+        ...,
         description="Country code filter used in the search"
     )
     timestamp: datetime = Field(
-        required=True,
+        ...,
         description="UTC timestamp of API response generation"
     )
     totalResults: int = Field(
-        required=True,
+        ...,
         ge=0,
         description="Total number of matching addresses found"
     )
@@ -136,11 +137,11 @@ class Metadata(BaseModel):
 # ========================
 class AddressResponse(BaseModel):
     metadata: Metadata = Field(
-        required=True,
+        ...,
         description="Summary information about the request"
     )
     addresses: List[AddressResult] = Field(
-        required=True,
+        ...,
         description="Ordered list of geocoding results (highest confidence first)"
     )
 

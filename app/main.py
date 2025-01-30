@@ -4,6 +4,9 @@ from fastapi import FastAPI, HTTPException
 from .schemas import AddressRequest, AddressResponse
 from .strategies import StrategyFactory
 from .exceptions import GeocodingError
+from dotenv import load_dotenv
+
+load_dotenv('credentials.env')
 
 app = FastAPI(
     title="Address Sanitization Service",

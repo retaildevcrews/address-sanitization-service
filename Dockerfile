@@ -21,4 +21,4 @@ COPY app/ ./app/
 EXPOSE 80
 
 # Default command to run the server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
