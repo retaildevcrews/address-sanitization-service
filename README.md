@@ -37,6 +37,12 @@ This repository contains a **FastAPI** application that sanitizes addresses usin
 echo "AZURE_MAPS_KEY=your_actual_key_here" > .env
 ```
 
+if the `.env` file already exists to add a new variable to it, you can use the echo command with the `>>` operator
+
+```bash
+echo "MAPBOX_MAPS_KEY=your_actual_key_here" >> .env
+```
+
 ### Running the Application
 
 ```bash
