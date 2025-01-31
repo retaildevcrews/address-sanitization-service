@@ -12,9 +12,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+if len(sys.argv) < 2:
+    logger.error(
+        "Invalid usage! Please specify at least one geocoding strategy.\n"
+        "Example usage:\n"
+        "  python run_test.py azure mapbox\n"
+        "Available strategies: azure, osm_nominatim, mapbox"
+    )
+    sys.exit(1)
+
+# Read geocoding strategies from command-line arguments
+STRATEGIES = sys.argv[1:]
+
 CSV_FILE = "sample_data/peru.csv"
 OUTPUT_FILE = "results.csv"
-STRATEGIES = ["azure","osm_nominatim","mapbox"]  # Geocoding strategies to test
 API_URL = "http://localhost:8000/api/v1/address"
 
 # Read the CSV file
@@ -82,6 +93,7 @@ for index, row in df.iterrows():
             logger.error("Stopping execution.")
             sys.exit(1)
 
+# Save results to CSV
 results_df = pd.DataFrame(results)
 results_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
 
