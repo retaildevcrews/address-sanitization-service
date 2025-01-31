@@ -81,30 +81,49 @@ class NominatimStrategy(GeocodingStrategy):
                 status_code=500
             )
 
+        # If no data returned, return a fallback result instead of a 404 error
         if not data:
-            raise GeocodingError(
-                detail="No results found in Nominatim (OpenStreetMap) response",
-                status_code=404
-            )
+            return [
+                AddressResult(
+                    confidenceScore=0.0,
+                    address=AddressPayload(
+                        streetNumber="",
+                        streetName="",
+                        municipality="",
+                        municipalitySubdivision="",
+                        postalCode="",
+                        countryCode=country_code.upper()
+                    ),
+                    freeformAddress="",
+                    coordinates=Coordinates(lat=0.0, lon=0.0),
+                    serviceUsed="osm_nominatim"
+                )
+            ]
+
+        # Sort by "importance" (descending)
+        sorted_data = sorted(
+            data,
+            key=lambda x: float(x.get("importance", 0)),
+            reverse=True
+        )
 
         return [
-            self._parse_result(r, country_code)
-            for r in sorted(
-                data,
-                key=lambda x: float(x.get("importance", 0)),
-                reverse=True
-            )
+            self._parse_result(r, country_code) for r in sorted_data
         ]
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Nominatim-specific response to standard format"""
         address_info = result.get("address", {})
+
         return AddressResult(
             confidenceScore=self._calculate_confidence_score(result),
             address=AddressPayload(
                 streetNumber=address_info.get("house_number", ""),
                 streetName=address_info.get("road", ""),
-                municipality=address_info.get("city", "") or address_info.get("town", ""),
+                municipality=(
+                    address_info.get("city", "")
+                    or address_info.get("town", "")
+                ),
                 municipalitySubdivision=address_info.get("county", ""),
                 postalCode=address_info.get("postcode", ""),
                 countryCode=address_info.get("country_code", country_code).upper()
@@ -118,6 +137,6 @@ class NominatimStrategy(GeocodingStrategy):
         )
 
     def _calculate_confidence_score(self, result: Dict) -> float:
-        """Convert Nominatim (OpenStreetMap) importance to confidence score (0-1)"""
+        """Convert Nominatim importance to a bounded confidence score (0.0 to 1.0)."""
         importance = float(result.get("importance", 0.0))
         return min(1.0, max(0.0, importance))
