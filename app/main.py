@@ -80,50 +80,53 @@ def health_check():
 # ========================
 # Main Endpoint
 # ========================
-# @app.post("/api/v1/address", response_model=AddressResponse)
-# def sanitize_address(payload: AddressRequest):
-@app.post("/api/v1/address")
-def sanitize_address():
+@app.post("/api/v1/address", response_model=AddressResponse)
+def sanitize_address(payload: AddressRequest):
+# @app.post("/api/v1/address")
+# def sanitize_address():
     """
     Receive a JSON payload with the following fields:
     {
       "address": "1 Microsoft Way, Redmond, WA 98052",
       "country_code": "US",
-      "strategy": "azure" or "mapbox"
+      "strategy": "azure" or "mapbox" or "loqate"
     }
 
     Currently, we only support "azure" as a strategy.
     This endpoint returns a JSON response with metadata and a list of addresses.
     """
-    # # Validate the strategy
-    # if payload.strategy.lower() != "azure" and payload.strategy.lower() != "mapbox":
-    #     raise HTTPException(
-    #         status_code=400,
-    #         detail=f"Unsupported strategy: {payload.strategy}. Only 'azure' and 'mapbox' are supported.",
-    #     )
+    # Validate the strategy
+    if payload.strategy.lower() != "azure" and payload.strategy.lower() != "mapbox" and payload.strategy.lower() != "loqate":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported strategy: {payload.strategy}. Only 'azure', 'mapbox' or 'loqate' are supported.",
+        )
 
     # call_smarty_street_maps_api()
 
-    call_loqate_maps_api()
+    # call_loqate_maps_api()
 
 
-#     if payload.strategy.lower() == "azure":
-#         address_objects = call_azure_maps_api(payload)
-#     else:
-#         address_objects = call_mapbox_maps_api(payload)
-#    # Construct metadata
-#     metadata = Metadata(
-#         query=payload.address,
-#         country=payload.country_code,
-#         timestamp=datetime.utcnow(),
-#         totalResults=len(address_objects)
-#     )
+    if payload.strategy.lower() == "azure":
+        address_objects = call_azure_maps_api(payload)
+    elif payload.strategy.lower() == "mapbox":
+        address_objects = call_mapbox_maps_api(payload)
+    else:
+        address_objects = call_loqate_maps_api(payload)
 
-#     # Return the final structured response
-#     return AddressResponse(
-#         metadata=metadata,
-#         addresses=address_objects
-#     )
+   # Construct metadata
+    metadata = Metadata(
+        query=payload.address,
+        country=payload.country_code,
+        timestamp=datetime.utcnow(),
+        totalResults=len(address_objects)
+    )
+
+    # Return the final structured response
+    return AddressResponse(
+        metadata=metadata,
+        addresses=address_objects
+    )
 
 
 def call_azure_maps_api(payload):
@@ -329,15 +332,15 @@ def call_smarty_street_maps_api():
     # By evaluating the DPV match codes, you can determine which address candidate is the most likely and accurate.
 
 
-def call_loqate_maps_api():
+def call_loqate_maps_api(payload):
 
     # https://www.loqate.com/developers/api/Capture/Interactive/Find/1.1/
 
     # Replace 'your_api_key' with your actual Loqate API key
     api_key = LOQATE_API_KEY
-    address = '1 Microsoft Way, Redmond, WA 98052' #'10 Downing Street, London'
+    address =  payload.address #'1 Microsoft Way, Redmond, WA 98052' #'10 Downing Street, London'
     limit = '10'
-    country = 'US'
+    country = payload.country_code # 'US'
 
     def find_addresses(text, container=''):
         url = f'https://api.addressy.com/Capture/Interactive/Find/v1.10/json3.ws?Key={api_key}&Text={text}&Countries={country}&Limit={limit}&IsMiddleware=false&Container={container}'
@@ -345,7 +348,7 @@ def call_loqate_maps_api():
         return response.json()
 
     def retrieve_address(id):
-        url = f'https://api.addressy.com/Capture/Interactive/Retrieve/v1.00/json3.ws?Key={api_key}&Id={id}'
+        url = "https://api.addressy.com/Capture/Interactive/Retrieve/v1.00/json3.ws?Key={api_key}&Id={id}&Field1Format={{Latitude}}&Field2Format={{Longitude}}".format(api_key=api_key, id=id)
         response = requests.get(url)
         return response.json()
 
@@ -373,13 +376,12 @@ def call_loqate_maps_api():
 
     if find_data['Items']:
         for item in find_data['Items']:
-            if item['Type'] == 'Building':
+            if item['Type'] == 'Address':
                 highlight = clean_highlight(item['Highlight'])
                 text_ranges, description_ranges = parse_highlight(highlight)
                 highlighted_count = count_highlighted_characters(text_ranges) + count_highlighted_characters(description_ranges)
                 addresses.append({
-                    'Text': item['Text'],
-                    'Description': item['Description'],
+                    'Id': item['Id'],
                     'Highlight': highlight,
                     'Highlighted Count': highlighted_count
                 })
@@ -387,11 +389,45 @@ def call_loqate_maps_api():
     # Sort addresses by the number of highlighted characters in descending order
     sorted_addresses = sorted(addresses, key=lambda x: x['Highlighted Count'], reverse=True)
 
-    # Print sorted addresses
-    for address in sorted_addresses:
-        print(f"Address: {address['Text']}, Description: {address['Description']}, Highlighted Count: {address['Highlighted Count']}")
+    # Fetch more data and create AddressResult objects
+    address_objects = []
+    for result in sorted_addresses:
+        retrieve_data = retrieve_address(result["Id"])
 
-    if sorted_addresses:
-        print(f"\nBest Match: {sorted_addresses[0]['Text']}, Description: {sorted_addresses[0]['Description']}, Highlighted Count: {sorted_addresses[0]['Highlighted Count']}")
-    else:
-        print("No building addresses found.")
+        if retrieve_data['Items']:
+            address_info = retrieve_data['Items'][0]
+
+            print(f"Id: {address_info.get('Id')}")
+            print(f"address_info: {address_info}")
+
+            try:
+                latitude = float(address_info["Field1"])
+                longitude = float(address_info["Field2"])
+            except ValueError as e:
+                latitude = 0.0
+                longitude = 0.0
+
+
+            address_objects.append(
+                AddressResult(
+                    confidenceScore=result.get("Highlighted Count", 0.0),
+                    address=AddressPayload(
+                        streetNumber=address_info.get("BuildingNumber", ""),
+                        streetName=address_info.get("Street", ""),
+                        municipality=address_info.get("City", ""),
+                        municipalitySubdivision=address_info.get("District", ""),
+                        postalCode=address_info.get("PostalCode", ""),
+                        countryCode=address_info.get("CountryISO3", "")
+                    ),
+                    freeformAddress=address_info.get("Label", ""),
+                    coordinates=Coordinates(
+                        lat=latitude,
+                        lon=longitude
+                    ),
+                    serviceUsed="Loqate",
+                    status="SUCCESS",
+                )
+            )
+
+
+    return address_objects
