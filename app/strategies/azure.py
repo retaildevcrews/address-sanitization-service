@@ -82,11 +82,32 @@ class AzureMapsStrategy(GeocodingStrategy):
             )
 
         results = data.get("results", [])
+
+        # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
-            raise GeocodingError(
-                detail="No results found in Azure Maps response",
-                status_code=404
-            )
+            return [
+                AddressResult(
+                    confidenceScore=0.0,
+                    address=AddressPayload(
+                        streetNumber="",
+                        streetName="",
+                        municipality="",
+                        municipalitySubdivision="",
+                        postalCode="",
+                        countryCode=country_code.upper()
+                    ),
+                    freeformAddress="",
+                    coordinates=Coordinates(lat=0.0, lon=0.0),
+                    serviceUsed="azure"
+                )
+            ]
+
+        # Sort results by "score" descending
+        sorted_results = sorted(
+            results,
+            key=lambda x: x.get("score", 0),
+            reverse=True
+        )
 
         return [
             self._parse_result(r, country_code)
