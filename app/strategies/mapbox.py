@@ -130,12 +130,3 @@ class MapboxMapsStrategy(GeocodingStrategy):
                                     )
 
         return address_result
-
-    def _get_confidence_score(self, result: Dict) -> float:
-        """Extract and validate confidence score"""
-        score = result.get("score", 0.0)
-        return max(0.0, min(1.0, float(score)))
-
-    def _get_country_code(self, address_info: Dict, fallback_code: str) -> str:
-        """Extract country code with fallback"""
-        return address_info.get("countryCodeISO3", fallback_code).upper()

@@ -1,4 +1,4 @@
-# app/strategies/azure.py
+# app/strategies/osm_nominatim.py
 import os
 import requests
 from typing import List, Dict
@@ -6,25 +6,23 @@ from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
 
-@StrategyFactory.register("azure")
-class AzureMapsStrategy(GeocodingStrategy):
+@StrategyFactory.register("osm_nominatim")
+class NominatimStrategy(GeocodingStrategy):
     # Configuration constants
-    API_BASE_URL = "https://atlas.microsoft.com/search/address/json"
-    API_VERSION = "1.0"
+    API_BASE_URL = "https://nominatim.openstreetmap.org/search"
     TIMEOUT = 5  # seconds
     MAX_RESULTS = 10
-    REQUIRED_ENV_VARS = ["AZURE_MAPS_KEY"]
+    REQUIRED_ENV_VARS = []  # Nominatim (OpenStreetMap) doesn't require an API key
 
     def __init__(self):
         self._validate_environment()
-        self.api_key = os.getenv("AZURE_MAPS_KEY")
 
     def _validate_environment(self):
         """Ensure required environment variables are present"""
         missing = [var for var in self.REQUIRED_ENV_VARS if not os.getenv(var)]
         if missing:
             raise ValueError(
-                f"Missing Azure Maps environment variables: {', '.join(missing)}"
+                f"Missing environment variables: {', '.join(missing)}"
             )
 
     def geocode(self, address: str, country_code: str) -> List[AddressResult]:
@@ -36,55 +34,55 @@ class AzureMapsStrategy(GeocodingStrategy):
             raise
         except Exception as e:
             raise GeocodingError(
-                detail=f"Unexpected Azure Maps error: {str(e)}",
+                detail=f"Unexpected Nominatim (OpenStreetMap) error: {str(e)}",
                 status_code=500
             )
 
     def _make_api_call(self, address: str, country_code: str) -> Dict:
         """Handle API communication"""
         params = {
-            "api-version": self.API_VERSION,
-            "subscription-key": self.api_key,
-            "query": address,
-            "countrySet": country_code,
-            "limit": self.MAX_RESULTS
+            "q": address,
+            "countrycodes": country_code.lower(),
+            "format": "jsonv2",
+            "limit": self.MAX_RESULTS,
+            "addressdetails": 1,
+            "namedetails": 1,
         }
 
         try:
             response = requests.get(
                 self.API_BASE_URL,
                 params=params,
-                timeout=self.TIMEOUT
+                timeout=self.TIMEOUT,
+                headers={"User-Agent": "AddressSanitizationService/1.0"}
             )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.Timeout:
             raise GeocodingError(
-                detail="Azure Maps API request timed out",
+                detail="Nominatim (OpenStreetMap) API request timed out",
                 status_code=504
             )
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code
-            detail = f"Azure Maps API error: {e.response.text}"
+            detail = f"Nominatim API error: {e.response.text}"
             raise GeocodingError(detail=detail, status_code=status_code)
         except requests.exceptions.RequestException as e:
             raise GeocodingError(
-                detail=f"Azure Maps connection error: {str(e)}",
+                detail=f"Nominatim (OpenStreetMap) connection error: {str(e)}",
                 status_code=503
             )
 
-    def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
+    def _process_response(self, data: List[Dict], country_code: str) -> List[AddressResult]:
         """Process and validate API response"""
-        if not isinstance(data, dict) or "results" not in data:
+        if not isinstance(data, list):
             raise GeocodingError(
-                detail="Invalid Azure Maps API response format",
+                detail="Invalid Nominatim (OpenStreetMap) API response format",
                 status_code=500
             )
 
-        results = data.get("results", [])
-
-        # If no results found, return a "fallback" AddressResult instead of raising 404
-        if not results:
+        # If no data returned, return a fallback result instead of a 404 error
+        if not data:
             return [
                 AddressResult(
                     confidenceScore=0.0,
@@ -98,54 +96,47 @@ class AzureMapsStrategy(GeocodingStrategy):
                     ),
                     freeformAddress="",
                     coordinates=Coordinates(lat=0.0, lon=0.0),
-                    serviceUsed="azure"
+                    serviceUsed="osm_nominatim"
                 )
             ]
 
-        # Sort results by "score" descending
-        sorted_results = sorted(
-            results,
-            key=lambda x: x.get("score", 0),
+        # Sort by "importance" (descending)
+        sorted_data = sorted(
+            data,
+            key=lambda x: float(x.get("importance", 0)),
             reverse=True
         )
 
         return [
-            self._parse_result(r, country_code)
-            for r in sorted(
-                results,
-                key=lambda x: x.get("score", 0),
-                reverse=True
-            )
+            self._parse_result(r, country_code) for r in sorted_data
         ]
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
-        """Convert Azure-specific response to standard format"""
+        """Convert Nominatim-specific response to standard format"""
         address_info = result.get("address", {})
-        position = result.get("position", {})
 
         return AddressResult(
-            confidenceScore=self._get_confidence_score(result),
+            confidenceScore=self._calculate_confidence_score(result),
             address=AddressPayload(
-                streetNumber=address_info.get("streetNumber", ""),
-                streetName=address_info.get("streetName", ""),
-                municipality=address_info.get("municipality", ""),
-                municipalitySubdivision=address_info.get("municipalitySubdivision", ""),
-                postalCode=address_info.get("postalCode", ""),
-                countryCode=self._get_country_code(address_info, country_code)
+                streetNumber=address_info.get("house_number", ""),
+                streetName=address_info.get("road", ""),
+                municipality=(
+                    address_info.get("city", "")
+                    or address_info.get("town", "")
+                ),
+                municipalitySubdivision=address_info.get("county", ""),
+                postalCode=address_info.get("postcode", ""),
+                countryCode=address_info.get("country_code", country_code).upper()
             ),
-            freeformAddress=address_info.get("freeformAddress", ""),
+            freeformAddress=result.get("display_name", ""),
             coordinates=Coordinates(
-                lat=position.get("lat", 0.0),
-                lon=position.get("lon", 0.0)
+                lat=float(result.get("lat", 0.0)),
+                lon=float(result.get("lon", 0.0))
             ),
-            serviceUsed="azure"
+            serviceUsed="osm_nominatim"
         )
 
-    def _get_confidence_score(self, result: Dict) -> float:
-        """Extract and validate confidence score"""
-        score = result.get("score", 0.0)
-        return max(0.0, min(1.0, float(score)))
-
-    def _get_country_code(self, address_info: Dict, fallback_code: str) -> str:
-        """Extract country code with fallback"""
-        return address_info.get("countryCodeISO3", fallback_code).upper()
+    def _calculate_confidence_score(self, result: Dict) -> float:
+        """Convert Nominatim importance to a bounded confidence score (0.0 to 1.0)."""
+        importance = float(result.get("importance", 0.0))
+        return min(1.0, max(0.0, importance))
