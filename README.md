@@ -1,6 +1,6 @@
 # Address Sanitization Service
 
-This repository contains a **FastAPI** application that sanitizes addresses using the [Azure Maps Search API](https://learn.microsoft.com/en-us/rest/api/maps/search/get-search-address?view=rest-maps-1.0&tabs=HTTP). The service accepts an address query, country code, and strategy (currently only `azure` is supported), then returns structured address data with confidence scores and metadata.
+This repository contains a FastAPI application that sanitizes addresses using several providers, including Azure Maps API, MapBox, and Nominatim (OpenStreetMap). The service accepts an address query, country code, and strategy (currently supporting azure, mapbox, and nominatim), then returns structured address data with confidence scores and metadata.
 
 ---
 
@@ -8,18 +8,17 @@ This repository contains a **FastAPI** application that sanitizes addresses usin
 
 - [Overview](#overview)
 - [Getting Started](#getting-started)
-  - [Docker Compose (Local)](#docker-compose-local)
-  - [DevContainer / Codespaces](#devcontainer--codespaces)
-  - [Environment Variables](#environment-variables)
+  - [Docker Compose](#docker-compose)
   - [Running the Application](#running-the-application)
 - [API Endpoints](#api-endpoints)
+- [Running the Test Harness](#running-the-test-harness)
 
 ---
 
 ## Overview
 
 - **Language**: Python (FastAPI)
-- **Dependencies**: Managed via `requirements.txt`
+- **Dependencies**: Managed with Poetry `pyproject.toml`
 - **Containerization**: Multi-mode support:
   - 🐳 Docker Compose (local development)
   - 🐳📦 Docker-in-Docker (DinD) in DevContainer/Codespaces
@@ -31,29 +30,32 @@ This repository contains a **FastAPI** application that sanitizes addresses usin
 
 ### Docker Compose
 
-1. Create `.env` file in project root:
+1. Create a `credentials.env` file in the project root, listing the services you plan to use:
 
 ```bash
-echo "AZURE_MAPS_KEY=your_actual_key_here" > credentials.env
+cat > credentials.env <<EOF
+AZURE_MAPS_KEY=your_actual_key_here
+MAPBOX_MAPS_KEY=your_actual_key_here
+EOF
 ```
 
-if the `.env` file already exists to add a new variable to it, you can use the echo command with the `>>` operator
+If the credentials.env file already exists, you can add a new variable to it using the echo command with the >> operator.
 
 ```bash
-echo "MAPBOX_MAPS_KEY=your_actual_key_here" >> .env
+echo 'MAPBOX_MAPS_KEY=your_actual_key_here' >> credentials.env
+echo "New variable added. If the service is already running, restart it to apply changes."
 ```
 
 ### Running the Application
 
 ```bash
-
-# Option 1: Docker Compose
-
+# Start the application using Docker Compose (Recommended)
 docker compose up --build
 
-# Option 2: Direct execution
-poetry install
+# OR run the application directly using Poetry
+poetry install  # Installs dependencies
 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
 ```
 
 Access endpoints at:
@@ -69,13 +71,13 @@ Access endpoints at:
 
 **Endpoint**: `POST /api/v1/address`
 
-#### Sample Request
+#### Sample Request using HTTPie
 
 ```bash
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure"
+  strategy="azure" # Available strategies: azure, osm_nominatim, mapbox
 ```
 
 #### Sample Response
@@ -106,3 +108,63 @@ http POST localhost:8000/api/v1/address \
   }
 }
 ```
+
+## Running the Test Harness
+
+The test harness allows you to evaluate different geocoding strategies by sending address queries to the FastAPI service and saving the results.
+
+### Prerequisites
+
+1. **Ensure the API is running**
+   The test harness sends requests to `http://localhost:8000/api/v1/address`. Make sure the FastAPI service is up and running.
+
+2. **Prepare the Input Data**
+   The `test_harness/peru.csv` file contains sample addresses from Peru. Ensure this file is in place or modify it with your own test data.
+
+### Running the Script
+
+Navigate to the `test_harness` folder and specify the geocoding strategies you want to test:
+
+```bash
+cd test_harness
+python run_test.py azure mapbox
+```
+
+You can specify one or more strategies. Available options:
+
+- `azure` (Azure Maps API)
+- `osm_nominatim` (Nominatim / OpenStreetMap)
+- `mapbox` (MapBox API)
+
+If no strategy is provided, the script will exit with an error.
+
+### What Happens?
+
+- The script reads addresses from `peru.csv`.
+- It tests each address using the specified geocoding strategies.
+- The results are saved to `results.csv` in the same folder.
+- If an error occurs (e.g., API failure), execution stops, and an error message is logged.
+
+### Output
+
+After execution, check the `results.csv` file for structured results including:
+
+- **Geocoding strategy used**
+- **Input address & country code**
+- **Best-matching address with confidence score**
+- **Latitude & longitude**
+
+### Troubleshooting
+
+- **Error: "Invalid usage! Please specify at least one geocoding strategy."**
+  → Ensure you provide at least one strategy when running the script. Example:
+
+  ```bash
+  python run_test.py azure mapbox
+  ```
+
+- **Error: "Request error with strategy 'X' for address 'Y'"**
+  → Ensure the API server is running and accessible at `http://localhost:8000`.
+
+- **No results found for an address**
+  → The API might not have a match for that query. Try different input addresses.

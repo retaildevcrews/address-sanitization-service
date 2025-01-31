@@ -22,7 +22,7 @@
     // },
     // forward ports
     "forwardPorts": [
-      8080 // Address Sanitation Service
+      8000 // Address Sanitation Service
     ],
     // labels for forwarded ports
     "portsAttributes": {
