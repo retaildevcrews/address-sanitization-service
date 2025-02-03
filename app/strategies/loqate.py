@@ -29,7 +29,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
     def geocode(self, address: str, country_code: str) -> List[AddressResult]:
         """Main geocoding interface implementation"""
         try:
-            response = self._make_api_call(address, country_code)
+            response = self._make_find_api_call(address, country_code)
             return self._process_response(response, country_code, address)
         except GeocodingError:
             raise
@@ -39,9 +39,13 @@ class LoqateMapsStrategy(GeocodingStrategy):
                 status_code=500
             )
 
-    def _make_api_call(self, address: str, country_code: str) -> Dict:
-        # Documentation: https://www.loqate.com/developers/api/Capture/Interactive/Find/1.1/
-        """Handle API communication"""
+    def _make_find_api_call(self, address: str, country_code: str) -> Dict:
+        """
+            Handle Find API communication
+            Returns addresses and places based on the search text/address.
+            Documentation: https://www.loqate.com/developers/api/Capture/Interactive/Find/1.1/
+        """
+
         container = ''
         query = "Find/v1.10/json3.ws?"
         params = {
@@ -53,6 +57,28 @@ class LoqateMapsStrategy(GeocodingStrategy):
             "Bias": "false",  # Setting Bias to false will help in returning items that do not match 100%.
             "Container": container
         }
+        return self._make_api_call(query, params)
+
+
+    def _make_retrieve_api_call(self, id: str) -> Dict:
+        """
+            Handle Retrieve API communication
+            Returns the full address details based on the Id.
+            Documentation: https://www.loqate.com/developers/api/Capture/Interactive/Retrieve/1.2/
+        """
+
+        query = "Retrieve/v1.00/json3.ws"
+        params = {
+            "Key": self.api_key,
+            "Id": id,
+            "Field1Format": "{Latitude}",
+            "Field2Format": "{Longitude}"
+        }
+        return self._make_api_call(query, params)
+
+
+    def _make_api_call(self, query: str, params : dict ) -> Dict:
+        """Handle API communication"""
         try:
 
             response = requests.get(self.API_BASE_URL + query,
@@ -151,19 +177,11 @@ class LoqateMapsStrategy(GeocodingStrategy):
             """
             return min(highlighted_count / address_length, 1.0)
 
-
-        # TODO: Add try except block to handle API call and missing keys
-        def retrieve_address(id):
-            url = "https://api.addressy.com/Capture/Interactive/Retrieve/v1.00/json3.ws?Key={api_key}&Id={id}&Field1Format={{Latitude}}&Field2Format={{Longitude}}".format(api_key=self.api_key, id=id)
-            response = requests.get(url)
-            return response.json()
-
         # Fetch more data and create AddressResult objects
         address_results = []
         for address_result in result:
 
-            ##################### TODO Refactor _make_api_call to take query and params as arguments and use it here
-            retrieve_data = retrieve_address(address_result["Id"])  # MAKES Another API call to get more data
+            retrieve_data = self._make_retrieve_api_call(address_result["Id"])
 
             if retrieve_data['Items']:
                 address_info = retrieve_data['Items'][0]
@@ -195,7 +213,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
                             lat=latitude,
                             lon=longitude
                         ),
-                        serviceUsed="Loqate"
+                        serviceUsed="loqate"
                     )
                 )
 
