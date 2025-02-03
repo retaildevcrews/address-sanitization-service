@@ -30,7 +30,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
         """Main geocoding interface implementation"""
         try:
             response = self._make_api_call(address, country_code)
-            return self._process_response(response, country_code)
+            return self._process_response(response, country_code, address)
         except GeocodingError:
             raise
         except Exception as e:
@@ -40,6 +40,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
             )
 
     def _make_api_call(self, address: str, country_code: str) -> Dict:
+        # Documentation: https://www.loqate.com/developers/api/Capture/Interactive/Find/1.1/
         """Handle API communication"""
         container = ''
         query = "Find/v1.10/json3.ws?"
@@ -49,6 +50,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
             "Countries": country_code,
             "Limit": self.MAX_RESULTS,
             "IsMiddleware": "false",
+            "Bias": "false",  # Setting Bias to false will help in returning items that do not match 100%.
             "Container": container
         }
         try:
@@ -73,7 +75,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
                 status_code=503
             )
 
-    def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
+    def _process_response(self, data: Dict, country_code, address: str) -> List[AddressResult]:
         """Process and validate API response"""
 
         if not isinstance(data, dict) or "Items" not in data:
@@ -84,17 +86,30 @@ class LoqateMapsStrategy(GeocodingStrategy):
 
 
         def count_highlighted_characters(highlight_ranges):
+            """
+                The count_highlighted_characters function takes a list of highlight ranges (tuples of start and end positions) and calculates
+                the total number of highlighted characters by summing up the differences between the end and start positions for each range
+            """
+
             count = 0
             for start, end in highlight_ranges:
                 count += end - start
             return count
 
         def clean_highlight(highlight):
+            """
+                The clean_highlight function removes any trailing semicolon (;) from the highlight string
+            """
             if highlight.endswith(';'):
                 highlight = highlight[:-1]
             return highlight
 
         def parse_highlight(highlight):
+            """
+                The parse_highlight function splits the cleaned highlight string into two parts: text ranges and description ranges.
+                Each part is further split into individual ranges, which are then converted into tuples of integers representing the start and end positions of the highlights.
+            """
+
             parts = highlight.split(';')
             text_ranges = [(int(r.split('-')[0]), int(r.split('-')[1])) for r in parts[0].split(',')] if parts[0] else []
             description_ranges = [(int(r.split('-')[0]), int(r.split('-')[1])) for r in parts[1].split(',')] if len(parts) > 1 and parts[1] else []
@@ -113,19 +128,29 @@ class LoqateMapsStrategy(GeocodingStrategy):
             if item['Type'] == 'Address':
                 highlight = clean_highlight(item['Highlight'])
                 text_ranges, description_ranges = parse_highlight(highlight)
+
+                """
+                    The highlighted_count is the sum of the highlighted characters in both the text ranges and the description ranges.
+                """
                 highlighted_count = count_highlighted_characters(text_ranges) + count_highlighted_characters(description_ranges)
                 addresses.append({
                     'Id': item['Id'],
-                    # 'Highlight': highlight,
                     'HighlightedCount': highlighted_count
                 })
 
         # Sort addresses by the number of highlighted characters in descending order
         sorted_addresses = sorted(addresses, key=lambda x: x['HighlightedCount'], reverse=True)
-        return self._parse_result(sorted_addresses, country_code)
+        return self._parse_result(sorted_addresses, country_code, address)
 
-    def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
+    def _parse_result(self, result: Dict, country_code, address: str) -> AddressResult:
         """Convert Loqate-specific response to standard format"""
+
+        def calculate_confidence_score(highlighted_count, address_length):
+            """
+                The confidenceScore can then be calculated as the ratio of highlighted_count to length of the address, ensuring it falls between 0 and 1.
+            """
+            return min(highlighted_count / address_length, 1.0)
+
 
         # TODO: Add try except block to handle API call and missing keys
         def retrieve_address(id):
@@ -134,18 +159,14 @@ class LoqateMapsStrategy(GeocodingStrategy):
             return response.json()
 
         # Fetch more data and create AddressResult objects
-        address_result = []
-        for result in result:
+        address_results = []
+        for address_result in result:
 
             ##################### TODO Refactor _make_api_call to take query and params as arguments and use it here
-            retrieve_data = retrieve_address(result["Id"])  # MAKES Another API call to get more data
+            retrieve_data = retrieve_address(address_result["Id"])  # MAKES Another API call to get more data
 
             if retrieve_data['Items']:
                 address_info = retrieve_data['Items'][0]
-
-                #DEBUG
-                print(f"Id: {address_info.get('Id')}")
-                print(f"address_info: {address_info}")
 
                 try:
                     latitude = float(address_info["Field1"])
@@ -154,10 +175,13 @@ class LoqateMapsStrategy(GeocodingStrategy):
                     latitude = 0.0
                     longitude = 0.0
 
+                highlighted_count = address_result.get("HighlightedCount",0)
 
-                address_result.append(
+                confidence_score = calculate_confidence_score(highlighted_count, len(address))
+
+                address_results.append(
                     AddressResult(
-                        confidenceScore=result.get("HighlightedCount", 0.0),  error input should be less than or equal to 1
+                        confidenceScore=confidence_score,
                         address=AddressPayload(
                             streetNumber=address_info.get("BuildingNumber", ""),
                             streetName=address_info.get("Street", ""),
@@ -175,4 +199,4 @@ class LoqateMapsStrategy(GeocodingStrategy):
                     )
                 )
 
-        return address_result
+        return address_results
