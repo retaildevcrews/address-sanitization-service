@@ -343,7 +343,7 @@ def call_loqate_maps_api(payload):
     country = payload.country_code # 'US'
 
     def find_addresses(text, container=''):
-        url = f'https://api.addressy.com/Capture/Interactive/Find/v1.10/json3.ws?Key={api_key}&Text={text}&Countries={country}&Limit={limit}&IsMiddleware=false&Container={container}'
+        url = f'https://api.addressy.com/Capture/Interactive/Find/v1.10/json3.ws?Key={api_key}&Text={text}&Countries={country}&Limit={limit}&Bias=true&IsMiddleware=false&Container={container}'
         response = requests.get(url)
         return response.json()
 
@@ -389,6 +389,12 @@ def call_loqate_maps_api(payload):
     # Sort addresses by the number of highlighted characters in descending order
     sorted_addresses = sorted(addresses, key=lambda x: x['Highlighted Count'], reverse=True)
 
+
+    # Calculate confidence score
+    def calculate_confidence_score(highlighted_count, address_length):
+        return min(highlighted_count / address_length, 1.0)
+
+
     # Fetch more data and create AddressResult objects
     address_objects = []
     for result in sorted_addresses:
@@ -397,8 +403,8 @@ def call_loqate_maps_api(payload):
         if retrieve_data['Items']:
             address_info = retrieve_data['Items'][0]
 
-            print(f"Id: {address_info.get('Id')}")
-            print(f"address_info: {address_info}")
+            # print(f"Id: {address_info.get('Id')}")
+            # print(f"address_info: {address_info}")
 
             try:
                 latitude = float(address_info["Field1"])
@@ -407,10 +413,12 @@ def call_loqate_maps_api(payload):
                 latitude = 0.0
                 longitude = 0.0
 
+            confidence_score = calculate_confidence_score(highlighted_count, len(address))
+
 
             address_objects.append(
                 AddressResult(
-                    confidenceScore=result.get("Highlighted Count", 0.0),
+                    confidenceScore=confidence_score,
                     address=AddressPayload(
                         streetNumber=address_info.get("BuildingNumber", ""),
                         streetName=address_info.get("Street", ""),
