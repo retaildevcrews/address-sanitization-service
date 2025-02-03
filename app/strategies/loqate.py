@@ -42,13 +42,13 @@ class LoqateMapsStrategy(GeocodingStrategy):
     def _make_api_call(self, address: str, country_code: str) -> Dict:
         """Handle API communication"""
         container = ''
-        query = "Interactive/Find/v1.10/json3.ws?"
+        query = "Find/v1.10/json3.ws?"
         params = {
             "Key": self.api_key,
             "Text": address,
             "Countries": country_code,
             "Limit": self.MAX_RESULTS,
-            "IsMiddleware": False,
+            "IsMiddleware": "false",
             "Container": container
         }
         try:
@@ -56,7 +56,6 @@ class LoqateMapsStrategy(GeocodingStrategy):
             response = requests.get(self.API_BASE_URL + query,
                                     params=params,
                                     timeout=self.TIMEOUT)
-
             response.raise_for_status()
             return response.json()
         except requests.exceptions.Timeout:
@@ -77,7 +76,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
     def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
         """Process and validate API response"""
 
-        if not isinstance(data, dict) or "features" not in data:
+        if not isinstance(data, dict) or "Items" not in data:
             raise GeocodingError(
                 detail="Invalid Loqate Maps API response format",
                 status_code=500
@@ -101,41 +100,29 @@ class LoqateMapsStrategy(GeocodingStrategy):
             description_ranges = [(int(r.split('-')[0]), int(r.split('-')[1])) for r in parts[1].split(',')] if len(parts) > 1 and parts[1] else []
             return text_ranges, description_ranges
 
-        results = data.get("Items", []) # this are just addresses without details
+        results = data.get("Items", []) # these are addresses and building type items without details
 
         if not results:
             raise GeocodingError(
                 detail="No results found in Loqate Maps response",
                 status_code=404
             )
-
         # build a list of addresses with highlighted count
         addresses = []
-        for item in results['Items']:
+        for item in results:
             if item['Type'] == 'Address':
                 highlight = clean_highlight(item['Highlight'])
                 text_ranges, description_ranges = parse_highlight(highlight)
                 highlighted_count = count_highlighted_characters(text_ranges) + count_highlighted_characters(description_ranges)
                 addresses.append({
                     'Id': item['Id'],
-                    'Highlight': highlight,
-                    'Highlighted Count': highlighted_count
+                    # 'Highlight': highlight,
+                    'HighlightedCount': highlighted_count
                 })
 
-
-        return [
-            # self._parse_result(r, country_code)
-            # for r in sorted(
-            #     results,
-            #     key=lambda x: x.get("relevance", 0.0),
-            #     reverse=True
-            # )
-
-            # Sort addresses by the number of highlighted characters in descending order
-            sorted_addresses = sorted(addresses, key=lambda x: x['Highlighted Count'], reverse=True)
-
-            self._parse_result(sorted_addresses, country_code)
-        ]
+        # Sort addresses by the number of highlighted characters in descending order
+        sorted_addresses = sorted(addresses, key=lambda x: x['HighlightedCount'], reverse=True)
+        return self._parse_result(sorted_addresses, country_code)
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Loqate-specific response to standard format"""
@@ -146,18 +133,17 @@ class LoqateMapsStrategy(GeocodingStrategy):
             response = requests.get(url)
             return response.json()
 
-        # sorted_addresses = result
         # Fetch more data and create AddressResult objects
         address_result = []
         for result in result:
 
-            #TODO Refactor _make_api_call to take query and params as arguments and use it here
-
+            ##################### TODO Refactor _make_api_call to take query and params as arguments and use it here
             retrieve_data = retrieve_address(result["Id"])  # MAKES Another API call to get more data
 
             if retrieve_data['Items']:
                 address_info = retrieve_data['Items'][0]
 
+                #DEBUG
                 print(f"Id: {address_info.get('Id')}")
                 print(f"address_info: {address_info}")
 
@@ -171,14 +157,14 @@ class LoqateMapsStrategy(GeocodingStrategy):
 
                 address_result.append(
                     AddressResult(
-                        confidenceScore=result.get("Highlighted Count", 0.0),
+                        confidenceScore=result.get("HighlightedCount", 0.0),  error input should be less than or equal to 1
                         address=AddressPayload(
                             streetNumber=address_info.get("BuildingNumber", ""),
                             streetName=address_info.get("Street", ""),
                             municipality=address_info.get("City", ""),
                             municipalitySubdivision=address_info.get("District", ""),
                             postalCode=address_info.get("PostalCode", ""),
-                            countryCode= country_code #address_info.get("CountryISO3", "")
+                            countryCode= country_code
                         ),
                         freeformAddress=address_info.get("Label", ""),
                         coordinates=Coordinates(
