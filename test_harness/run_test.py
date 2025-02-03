@@ -3,6 +3,7 @@ import requests
 import sys
 import logging
 from pprint import pformat
+import argparse
 
 # Configure logging
 logging.basicConfig(
@@ -12,89 +13,134 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-if len(sys.argv) < 2:
-    logger.error(
-        "Invalid usage! Please specify at least one geocoding strategy.\n"
-        "Example usage:\n"
-        "  python run_test.py azure mapbox loqate\n"
-        "Available strategies: azure, osm_nominatim, mapbox, loqate"
+def parse_args():
+    """
+    Parse command-line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="Test geocoding strategies by sending addresses to an API."
     )
-    sys.exit(1)
+    parser.add_argument(
+        "strategies",
+        nargs="+",
+        help="One or more geocoding strategies (e.g., azure, osm_nominatim, mapbox)."
+    )
+    parser.add_argument(
+        "--csv-file",
+        default="sample_data/peru.csv",
+        help="Path to the input CSV file with addresses."
+    )
+    parser.add_argument(
+        "--output-file",
+        default="results.csv",
+        help="Path to the output CSV file for results."
+    )
+    parser.add_argument(
+        "--api-url",
+        default="http://localhost:8000/api/v1/address",
+        help="API endpoint for geocoding."
+    )
+    return parser.parse_args()
 
-# Read geocoding strategies from command-line arguments
-STRATEGIES = sys.argv[1:]
+def read_csv(csv_file):
+    """
+    Read the CSV file containing address data.
+    """
+    try:
+        df = pd.read_csv(csv_file)
+        logger.info("Successfully read CSV file: %s", csv_file)
+        return df
+    except Exception as e:
+        logger.error("Failed to read CSV file '%s': %s", csv_file, e)
+        sys.exit(1)
 
-CSV_FILE = "sample_data/peru.csv"
-OUTPUT_FILE = "results.csv"
-API_URL = "http://localhost:8000/api/v1/address"
+def process_address(session, address, country_code, strategy, api_url):
+    """
+    Send the address data to the API with the given strategy and return the best result.
 
-# Read the CSV file
-df = pd.read_csv(CSV_FILE)
+    :param session: requests.Session() object for HTTP requests.
+    :param address: The address string to geocode.
+    :param country_code: The country code of the address.
+    :param strategy: The geocoding strategy to use.
+    :param api_url: The API endpoint URL.
+    :return: A dictionary with the best geocoding result or None if no result.
+    """
+    payload = {
+        "address": address,
+        "country_code": country_code,
+        "strategy": strategy
+    }
+    try:
+        response = session.post(api_url, json=payload)
+        response.raise_for_status()
+        result = response.json()
 
-results = []
+        # Log the full response in debug mode for troubleshooting
+        logger.debug("Response for strategy '%s' and address '%s': %s", strategy, address, pformat(result))
 
-# Iterate through each address and strategy
-for index, row in df.iterrows():
-    address = row["address"]
-    country_code = row["country_code"]
-
-    for strategy in STRATEGIES:
-        payload = {
-            "address": address,
-            "country_code": country_code,
-            "strategy": strategy
-        }
-
-        try:
-            response = requests.post(API_URL, json=payload)
-            # If the server responds with a 4xx/5xx status code, this will raise an HTTPError
-            response.raise_for_status()
-            result = response.json()
-
-            # Check for custom error_code in the JSON
-            if "error_code" in result:
-                logger.error("Server returned an error code: %s", result["error_code"])
-                logger.error("Error details: %s", result.get('error_message', 'No details provided.'))
-                logger.error("Stopping execution.")
-                sys.exit(1)
-
-            logger.info("Strategy: %s | Address: %s", strategy, address)
-            logger.info("Response:\n%s", pformat(result))
-
-            # Find the result with the highest confidence score
-            if result["addresses"]:
-                best_result = max(
-                    result["addresses"],
-                    key=lambda x: x["confidenceScore"]
-                )
-
-                # Extract relevant data for the output CSV
-                results.append({
-                    "strategy": strategy,
-                    "input_address": address,
-                    "country_code": country_code,
-                    "confidence_score": best_result["confidenceScore"],
-                    "street_number": best_result["address"]["streetNumber"],
-                    "street_name": best_result["address"]["streetName"],
-                    "municipality": best_result["address"]["municipality"],
-                    "postal_code": best_result["address"]["postalCode"],
-                    "latitude": best_result["coordinates"]["lat"],
-                    "longitude": best_result["coordinates"]["lon"]
-                })
-            else:
-                logger.warning(
-                    "No results found for strategy '%s' and address '%s'",
-                    strategy,
-                    address
-                )
-
-        except requests.exceptions.RequestException as e:
-            logger.error("Request error with strategy '%s' for address '%s': %s", strategy, address, e)
-            logger.error("Stopping execution.")
+        if "error_code" in result:
+            logger.error("Server returned an error for strategy '%s': %s", strategy, result)
             sys.exit(1)
 
-# Save results to CSV
-results_df = pd.DataFrame(results)
-results_df.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
+        if result.get("addresses"):
+            best_result = max(
+                result["addresses"],
+                key=lambda x: x.get("confidenceScore", 0)
+            )
+            return {
+                "strategy": strategy,
+                "input_address": address,
+                "country_code": country_code,
+                "confidence_score": best_result.get("confidenceScore"),
+                "street_number": best_result.get("address", {}).get("streetNumber"),
+                "street_name": best_result.get("address", {}).get("streetName"),
+                "municipality": best_result.get("address", {}).get("municipality"),
+                "postal_code": best_result.get("address", {}).get("postalCode"),
+                "latitude": best_result.get("coordinates", {}).get("lat"),
+                "longitude": best_result.get("coordinates", {}).get("lon")
+            }
+        else:
+            logger.warning("No results found for strategy '%s' and address '%s'", strategy, address)
+            return None
 
-logger.info("Results saved to %s", OUTPUT_FILE)
+    except requests.exceptions.RequestException as e:
+        logger.error("Request error for strategy '%s' and address '%s': %s", strategy, address, e)
+        sys.exit(1)
+
+def save_results(results, output_file):
+    """
+    Save the collected results into a CSV file.
+    """
+    if results:
+        results_df = pd.DataFrame(results)
+        try:
+            results_df.to_csv(output_file, index=False, encoding='utf-8-sig')
+            logger.info("Results saved to %s", output_file)
+        except Exception as e:
+            logger.error("Failed to write results CSV: %s", e)
+            sys.exit(1)
+    else:
+        logger.warning("No results to save.")
+
+def main():
+    args = parse_args()
+
+    df = read_csv(args.csv_file)
+    results = []
+
+    # Use a session for improved performance with multiple HTTP requests
+    with requests.Session() as session:
+        for index, row in df.iterrows():
+            address = row.get("address")
+            country_code = row.get("country_code")
+
+            for strategy in args.strategies:
+                logger.info("Processing strategy '%s' for address '%s'", strategy, address)
+                result = process_address(session, address, country_code, strategy, args.api_url)
+                if result:
+                    results.append(result)
+
+    save_results(results, args.output_file)
+
+if __name__ == "__main__":
+    main()
