@@ -16,8 +16,8 @@ if len(sys.argv) < 2:
     logger.error(
         "Invalid usage! Please specify at least one geocoding strategy.\n"
         "Example usage:\n"
-        "  python run_test.py azure mapbox\n"
-        "Available strategies: azure, osm_nominatim, mapbox"
+        "  python run_test.py azure mapbox loqate\n"
+        "Available strategies: azure, osm_nominatim, mapbox, loqate"
     )
     sys.exit(1)
 
