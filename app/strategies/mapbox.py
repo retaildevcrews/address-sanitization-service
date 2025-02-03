@@ -5,6 +5,7 @@ from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
+from ..utilities import create_empty_address_result
 
 @StrategyFactory.register("mapbox")
 class MapboxMapsStrategy(GeocodingStrategy):
@@ -80,12 +81,10 @@ class MapboxMapsStrategy(GeocodingStrategy):
             )
 
         results = data.get("features", [])
-        if not results:
-            raise GeocodingError(
-                detail="No results found in Mapbox Maps response",
-                status_code=404
-            )
 
+        # If no results found, return a "fallback" AddressResult instead of raising 404
+        if not results:
+            return create_empty_address_result(country_code, "mapbox")
         return [
             self._parse_result(r, country_code)
             for r in sorted(
