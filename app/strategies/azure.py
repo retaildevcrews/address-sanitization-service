@@ -5,6 +5,7 @@ from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
+from ..result_helper import create_empty_address_result
 
 @StrategyFactory.register("azure")
 class AzureMapsStrategy(GeocodingStrategy):
@@ -85,22 +86,7 @@ class AzureMapsStrategy(GeocodingStrategy):
 
         # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
-            return [
-                AddressResult(
-                    confidenceScore=0.0,
-                    address=AddressPayload(
-                        streetNumber="",
-                        streetName="",
-                        municipality="",
-                        municipalitySubdivision="",
-                        postalCode="",
-                        countryCode=country_code.upper()
-                    ),
-                    freeformAddress="",
-                    coordinates=Coordinates(lat=0.0, lon=0.0),
-                    serviceUsed="azure"
-                )
-            ]
+            return create_empty_address_result(country_code, "azure")
 
         # Sort results by "score" descending
         sorted_results = sorted(
