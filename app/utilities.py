@@ -1,4 +1,4 @@
-# app/strategies/result_helper.py
+# app/strategies/utilities.py
 
 from .schemas import AddressResult, AddressPayload, Coordinates
 
