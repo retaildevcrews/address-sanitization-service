@@ -5,7 +5,7 @@ from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
-from ..result_helper import create_empty_address_result
+from ..utilities import create_empty_address_result
 
 @StrategyFactory.register("osm_nominatim")
 class NominatimStrategy(GeocodingStrategy):
