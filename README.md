@@ -1,6 +1,6 @@
 # Address Sanitization Service
 
-This repository contains a FastAPI application that sanitizes addresses using several providers, including Azure Maps API, MapBox, and Nominatim (OpenStreetMap). The service accepts an address query, country code, and strategy (currently supporting azure, mapbox, and nominatim), then returns structured address data with confidence scores and metadata.
+This repository contains a FastAPI application that sanitizes addresses using several providers, including Azure Maps API, MapBox, Loqate and Nominatim (OpenStreetMap). The service accepts an address query, country code, and strategy (currently supporting azure, mapbox, loqate and nominatim), then returns structured address data with confidence scores and metadata.
 
 ---
 
@@ -36,6 +36,7 @@ This repository contains a FastAPI application that sanitizes addresses using se
 cat > credentials.env <<EOF
 AZURE_MAPS_KEY=your_actual_key_here
 MAPBOX_MAPS_KEY=your_actual_key_here
+LOQATE_API_KEY=your_actual_key_here
 EOF
 ```
 
@@ -43,6 +44,7 @@ If the credentials.env file already exists, you can add a new variable to it usi
 
 ```bash
 echo 'MAPBOX_MAPS_KEY=your_actual_key_here' >> credentials.env
+echo 'LOQATE_API_KEY=your_actual_key_here' >> credentials.env
 echo "New variable added. If the service is already running, restart it to apply changes."
 ```
 
@@ -77,7 +79,7 @@ Access endpoints at:
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure" # Available strategies: azure, osm_nominatim, mapbox
+  strategy="azure" # Available strategies: azure, osm_nominatim, mapbox, loqate
 ```
 
 #### Sample Response
@@ -127,7 +129,7 @@ Navigate to the `test_harness` folder and specify the geocoding strategies you w
 
 ```bash
 cd test_harness
-python run_test.py azure mapbox
+python run_test.py azure mapbox loqate
 ```
 
 You can specify one or more strategies. Available options:
@@ -135,6 +137,7 @@ You can specify one or more strategies. Available options:
 - `azure` (Azure Maps API)
 - `osm_nominatim` (Nominatim / OpenStreetMap)
 - `mapbox` (MapBox API)
+- `loqate` (Loqate API)
 
 If no strategy is provided, the script will exit with an error.
 
@@ -160,7 +163,7 @@ After execution, check the `results.csv` file for structured results including:
   → Ensure you provide at least one strategy when running the script. Example:
 
   ```bash
-  python run_test.py azure mapbox
+  python run_test.py azure mapbox loqate
   ```
 
 - **Error: "Request error with strategy 'X' for address 'Y'"**

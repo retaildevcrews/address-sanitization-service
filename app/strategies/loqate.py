@@ -5,6 +5,7 @@ from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
+from ..utilities import create_empty_address_result
 
 @StrategyFactory.register("loqate")
 class LoqateMapsStrategy(GeocodingStrategy):
@@ -143,11 +144,9 @@ class LoqateMapsStrategy(GeocodingStrategy):
 
         results = data.get("Items", []) # these are addresses and building type items without details
 
+        # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
-            raise GeocodingError(
-                detail="No results found in Loqate Maps response",
-                status_code=404
-            )
+            return create_empty_address_result(country_code, "loqate")
         # build a list of addresses with highlighted count
         addresses = []
         for item in results:
