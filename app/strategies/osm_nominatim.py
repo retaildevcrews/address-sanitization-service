@@ -5,6 +5,7 @@ from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
+from ..utilities import create_empty_address_result
 
 @StrategyFactory.register("osm_nominatim")
 class NominatimStrategy(GeocodingStrategy):
@@ -83,22 +84,7 @@ class NominatimStrategy(GeocodingStrategy):
 
         # If no data returned, return a fallback result instead of a 404 error
         if not data:
-            return [
-                AddressResult(
-                    confidenceScore=0.0,
-                    address=AddressPayload(
-                        streetNumber="",
-                        streetName="",
-                        municipality="",
-                        municipalitySubdivision="",
-                        postalCode="",
-                        countryCode=country_code.upper()
-                    ),
-                    freeformAddress="",
-                    coordinates=Coordinates(lat=0.0, lon=0.0),
-                    serviceUsed="osm_nominatim"
-                )
-            ]
+            return create_empty_address_result(country_code, "osm_nominatim")
 
         # Sort by "importance" (descending)
         sorted_data = sorted(
