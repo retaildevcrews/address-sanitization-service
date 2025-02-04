@@ -1,9 +1,13 @@
 # app/strategies/__init__.py
+import logging
 import pkgutil
 from importlib import import_module
 from typing import Type
 from abc import ABC, abstractmethod
 from ..schemas import AddressResult
+from ..singleton_logger import SingletonLogger
+
+logger = SingletonLogger().get_logger()
 
 class GeocodingStrategy(ABC):
     """Abstract base class for all geocoding strategies"""
@@ -21,6 +25,7 @@ class StrategyFactory:
         """Decorator for registering new strategies"""
         def decorator(strategy_class: Type[GeocodingStrategy]) -> Type[GeocodingStrategy]:
             cls._strategies[name.lower()] = strategy_class
+            logger.info(f"Registered strategy: {name.lower()}")
             return strategy_class
         return decorator
 
@@ -28,8 +33,10 @@ class StrategyFactory:
     def get_strategy(cls, name: str) -> GeocodingStrategy:
         """Retrieve a strategy implementation by name"""
         normalized_name = name.lower()
+        logger.info(f"Retrieving strategy: {normalized_name}")
 
         if normalized_name not in cls._strategies:
+            logger.error(f"Unsupported strategy: {name}")
             raise ValueError(
                 f"Unsupported strategy: {name}. "
                 f"Available strategies: {', '.join(cls._strategies.keys())}"
@@ -42,5 +49,6 @@ __path__ = pkgutil.extend_path(__path__, __name__)
 for _, module_name, _ in pkgutil.iter_modules(__path__):
     if module_name != "__init__":  # Skip self
         import_module(f"{__name__}.{module_name}")
+        logger.info(f"Imported module: {module_name}")
 
 __all__ = ['GeocodingStrategy', 'StrategyFactory']
