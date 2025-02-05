@@ -1,11 +1,16 @@
 # app/strategies/azure.py
 import os
 import requests
+import logging
 from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
 from ..utilities import create_empty_address_result
+from ..singleton_logger import SingletonLogger
+
+logger = SingletonLogger().get_logger()
+
 
 @StrategyFactory.register("azure")
 class AzureMapsStrategy(GeocodingStrategy):
@@ -19,23 +24,28 @@ class AzureMapsStrategy(GeocodingStrategy):
     def __init__(self):
         self._validate_environment()
         self.api_key = os.getenv("AZURE_MAPS_KEY")
+        logger.info("AzureMapsStrategy initialized with API key")
 
     def _validate_environment(self):
         """Ensure required environment variables are present"""
         missing = [var for var in self.REQUIRED_ENV_VARS if not os.getenv(var)]
         if missing:
+            logger.error(f"Missing Azure Maps environment variables: {', '.join(missing)}")
             raise ValueError(
                 f"Missing Azure Maps environment variables: {', '.join(missing)}"
             )
 
     def geocode(self, address: str, country_code: str) -> List[AddressResult]:
         """Main geocoding interface implementation"""
+        logger.info(f"Geocoding address: {address} for country: {country_code}")
         try:
             response = self._make_api_call(address, country_code)
             return self._process_response(response, country_code)
-        except GeocodingError:
+        except GeocodingError as e:
+            logger.error(f"GeocodingError: {e.detail}")
             raise
         except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
             raise GeocodingError(
                 detail=f"Unexpected Azure Maps error: {str(e)}",
                 status_code=500
@@ -51,6 +61,7 @@ class AzureMapsStrategy(GeocodingStrategy):
             "limit": self.MAX_RESULTS
         }
 
+        logger.info(f"Making API call to Azure Maps with params: {params}")
         try:
             response = requests.get(
                 self.API_BASE_URL,
@@ -58,8 +69,10 @@ class AzureMapsStrategy(GeocodingStrategy):
                 timeout=self.TIMEOUT
             )
             response.raise_for_status()
+            logger.info("API call successful")
             return response.json()
         except requests.exceptions.Timeout:
+            logger.error("Azure Maps API request timed out")
             raise GeocodingError(
                 detail="Azure Maps API request timed out",
                 status_code=504
@@ -67,8 +80,10 @@ class AzureMapsStrategy(GeocodingStrategy):
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code
             detail = f"Azure Maps API error: {e.response.text}"
+            logger.error(detail)
             raise GeocodingError(detail=detail, status_code=status_code)
         except requests.exceptions.RequestException as e:
+            logger.error(f"Azure Maps connection error: {str(e)}")
             raise GeocodingError(
                 detail=f"Azure Maps connection error: {str(e)}",
                 status_code=503
@@ -76,7 +91,9 @@ class AzureMapsStrategy(GeocodingStrategy):
 
     def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
         """Process and validate API response"""
+        logger.info("Processing API response")
         if not isinstance(data, dict) or "results" not in data:
+            logger.error("Invalid Azure Maps API response format")
             raise GeocodingError(
                 detail="Invalid Azure Maps API response format",
                 status_code=500
@@ -86,15 +103,10 @@ class AzureMapsStrategy(GeocodingStrategy):
 
         # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
+            logger.info("No results found, returning fallback address result")
             return create_empty_address_result(country_code, "azure")
 
-        # Sort results by "score" descending
-        sorted_results = sorted(
-            results,
-            key=lambda x: x.get("score", 0),
-            reverse=True
-        )
-
+        logger.info(f"Found {len(results)} results, processing")
         return [
             self._parse_result(r, country_code)
             for r in sorted(
@@ -106,6 +118,7 @@ class AzureMapsStrategy(GeocodingStrategy):
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Azure-specific response to standard format"""
+        logger.info("Parsing result")
         address_info = result.get("address", {})
         position = result.get("position", {})
 
@@ -130,8 +143,11 @@ class AzureMapsStrategy(GeocodingStrategy):
     def _get_confidence_score(self, result: Dict) -> float:
         """Extract and validate confidence score"""
         score = result.get("score", 0.0)
+        logger.debug(f"Extracted confidence score: {score}")
         return max(0.0, min(1.0, float(score)))
 
     def _get_country_code(self, address_info: Dict, fallback_code: str) -> str:
         """Extract country code with fallback"""
-        return address_info.get("countryCodeISO3", fallback_code).upper()
+        country_code = address_info.get("countryCodeISO3", fallback_code).upper()
+        logger.debug(f"Extracted country code: {country_code}")
+        return country_code

@@ -1,11 +1,15 @@
 # app/strategies/loqate.py
 import os
 import requests
+import logging
 from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
 from ..utilities import create_empty_address_result
+from ..singleton_logger import SingletonLogger
+
+logger = SingletonLogger().get_logger()
 
 @StrategyFactory.register("loqate")
 class LoqateMapsStrategy(GeocodingStrategy):
@@ -18,23 +22,28 @@ class LoqateMapsStrategy(GeocodingStrategy):
     def __init__(self):
         self._validate_environment()
         self.api_key = os.getenv("LOQATE_API_KEY")
+        logger.info("LoqateMapsStrategy initialized with API key")
 
     def _validate_environment(self):
         """Ensure required environment variables are present"""
         missing = [var for var in self.REQUIRED_ENV_VARS if not os.getenv(var)]
         if missing:
+            logger.error(f"Missing environment variables: {', '.join(missing)}")
             raise ValueError(
                 f"Missing Loqate Maps environment variables: {', '.join(missing)}"
             )
 
     def geocode(self, address: str, country_code: str) -> List[AddressResult]:
         """Main geocoding interface implementation"""
+        logger.info(f"Geocoding address: {address} for country: {country_code}")
         try:
             response = self._make_find_api_call(address, country_code)
             return self._process_response(response, country_code, address)
-        except GeocodingError:
+        except GeocodingError as e:
+            logger.error(f"GeocodingError: {e.detail}")
             raise
         except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
             raise GeocodingError(
                 detail=f"Unexpected Loqate Maps error: {str(e)}",
                 status_code=500
@@ -46,7 +55,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
             Returns addresses and places based on the search text/address.
             Documentation: https://www.loqate.com/developers/api/Capture/Interactive/Find/1.1/
         """
-
+        logger.info(f"Making Find API call for address: {address} and country: {country_code}")
         container = ''
         query = "Find/v1.10/json3.ws?"
         params = {
@@ -60,14 +69,13 @@ class LoqateMapsStrategy(GeocodingStrategy):
         }
         return self._make_api_call(query, params)
 
-
     def _make_retrieve_api_call(self, id: str) -> Dict:
         """
             Handle Retrieve API communication
             Returns the full address details based on the Id.
             Documentation: https://www.loqate.com/developers/api/Capture/Interactive/Retrieve/1.2/
         """
-
+        logger.info(f"Making Retrieve API call for ID: {id}")
         query = "Retrieve/v1.00/json3.ws"
         params = {
             "Key": self.api_key,
@@ -77,17 +85,17 @@ class LoqateMapsStrategy(GeocodingStrategy):
         }
         return self._make_api_call(query, params)
 
-
-    def _make_api_call(self, query: str, params : dict ) -> Dict:
+    def _make_api_call(self, query: str, params: dict) -> Dict:
         """Handle API communication"""
         try:
-
+            logger.info(f"Making API call with query: {query} and params: {params}")
             response = requests.get(self.API_BASE_URL + query,
                                     params=params,
                                     timeout=self.TIMEOUT)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.Timeout:
+            logger.error("Loqate Maps API request timed out")
             raise GeocodingError(
                 detail="Loqate Maps API request timed out",
                 status_code=504
@@ -95,8 +103,10 @@ class LoqateMapsStrategy(GeocodingStrategy):
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code
             detail = f"Loqate Maps API error: {e.response.text}"
+            logger.error(detail)
             raise GeocodingError(detail=detail, status_code=status_code)
         except requests.exceptions.RequestException as e:
+            logger.error(f"Loqate Maps connection error: {str(e)}")
             raise GeocodingError(
                 detail=f"Loqate Maps connection error: {str(e)}",
                 status_code=503
@@ -104,20 +114,19 @@ class LoqateMapsStrategy(GeocodingStrategy):
 
     def _process_response(self, data: Dict, country_code, address: str) -> List[AddressResult]:
         """Process and validate API response"""
-
+        logger.info("Processing API response")
         if not isinstance(data, dict) or "Items" not in data:
+            logger.error("Invalid Loqate Maps API response format")
             raise GeocodingError(
                 detail="Invalid Loqate Maps API response format",
                 status_code=500
             )
-
 
         def count_highlighted_characters(highlight_ranges):
             """
                 The count_highlighted_characters function takes a list of highlight ranges (tuples of start and end positions) and calculates
                 the total number of highlighted characters by summing up the differences between the end and start positions for each range
             """
-
             count = 0
             for start, end in highlight_ranges:
                 count += end - start
@@ -146,8 +155,9 @@ class LoqateMapsStrategy(GeocodingStrategy):
 
         # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
+            logger.info("No results found, returning empty address result")
             return create_empty_address_result(country_code, "loqate")
-        # build a list of addresses with highlighted count
+
         addresses = []
         for item in results:
             if item['Type'] == 'Address':
@@ -169,6 +179,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
 
     def _parse_result(self, result: Dict, country_code, address: str) -> AddressResult:
         """Convert Loqate-specific response to standard format"""
+        logger.info("Parsing result into standard format")
 
         def calculate_confidence_score(highlighted_count, address_length):
             """
@@ -176,10 +187,8 @@ class LoqateMapsStrategy(GeocodingStrategy):
             """
             return min(highlighted_count / address_length, 1.0)
 
-        # Fetch more data and create AddressResult objects
         address_results = []
         for address_result in result:
-
             retrieve_data = self._make_retrieve_api_call(address_result["Id"])
 
             if retrieve_data['Items']:
@@ -189,11 +198,11 @@ class LoqateMapsStrategy(GeocodingStrategy):
                     latitude = float(address_info["Field1"])
                     longitude = float(address_info["Field2"])
                 except ValueError as e:
+                    logger.warning(f"Invalid latitude/longitude values: {e}")
                     latitude = 0.0
                     longitude = 0.0
 
-                highlighted_count = address_result.get("HighlightedCount",0)
-
+                highlighted_count = address_result.get("HighlightedCount", 0)
                 confidence_score = calculate_confidence_score(highlighted_count, len(address))
 
                 address_results.append(
@@ -205,7 +214,7 @@ class LoqateMapsStrategy(GeocodingStrategy):
                             municipality=address_info.get("City", ""),
                             municipalitySubdivision=address_info.get("District", ""),
                             postalCode=address_info.get("PostalCode", ""),
-                            countryCode= country_code
+                            countryCode=country_code
                         ),
                         freeformAddress=address_info.get("Label", ""),
                         coordinates=Coordinates(
