@@ -20,9 +20,9 @@ class SingletonLogger:
         log_dir = "./logs"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        log_file = os.path.join(log_dir, f"log_{datetime.now().strftime('%Y-%m-%d')}.log")
+        log_file = os.path.join(log_dir, "log")
 
-        file_handler = logging.FileHandler(log_file)
+        file_handler = TimedRotatingFileHandler(log_file, when="midnight", interval=1, backupCount=7)
         file_handler.setFormatter(formatter)
 
         # Create a stream handler
