@@ -32,6 +32,7 @@ class SingletonLogger:
         # Add handlers to the logger
         self.logger.addHandler(file_handler)
         self.logger.addHandler(stream_handler)
+        self.logger.info(f"Log file name: {log_file}")
 
     def get_logger(self):
         return self.logger
