@@ -22,8 +22,7 @@ class SingletonLogger:
             os.makedirs(log_dir)
         log_file = os.path.join(log_dir, f"log_{datetime.now().strftime('%Y-%m-%d')}.log")
 
-        print(f"Log file name: {log_file}")
-
+        self.logger.info(f"Log file name: {log_file}")
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
 
