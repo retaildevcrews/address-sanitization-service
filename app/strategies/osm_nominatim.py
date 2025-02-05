@@ -11,8 +11,6 @@ from ..singleton_logger import SingletonLogger
 
 logger = SingletonLogger().get_logger()
 
-
-
 @StrategyFactory.register("osm_nominatim")
 class NominatimStrategy(GeocodingStrategy):
     # Configuration constants
