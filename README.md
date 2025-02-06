@@ -35,6 +35,7 @@ This repository contains a FastAPI application that sanitizes addresses using se
 ```bash
 cat > credentials.env <<EOF
 AZURE_MAPS_KEY=your_actual_key_here
+AZURE_MAPS_CLIENT_ID=your_client_id_here
 MAPBOX_MAPS_KEY=your_actual_key_here
 LOQATE_API_KEY=your_actual_key_here
 EOF
@@ -46,6 +47,7 @@ If the credentials.env file already exists, you can add a new variable to it usi
 echo 'MAPBOX_MAPS_KEY=your_actual_key_here' >> credentials.env
 echo 'LOQATE_API_KEY=your_actual_key_here' >> credentials.env
 echo "New variable added. If the service is already running, restart it to apply changes."
+
 ```
 
 ### Running the Application
@@ -79,7 +81,7 @@ Access endpoints at:
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure" # Available strategies: azure, osm_nominatim, mapbox, loqate
+  strategy="azure" # Available strategies: azure, azure_geocode, osm_nominatim, mapbox, loqate
 ```
 
 #### Sample Response
