@@ -1,26 +1,29 @@
 # app/main.py
 from datetime import datetime
+
 from fastapi import FastAPI, HTTPException
+
+from .exceptions import GeocodingError
 from .schemas import AddressRequest, AddressResponse
 from .strategies import StrategyFactory
-from .exceptions import GeocodingError
-from dotenv import load_dotenv
-
-load_dotenv('credentials.env')
 
 app = FastAPI(
     title="Address Sanitization Service",
     description="Sanitizes addresses using multiple geocoding providers",
     version="1.0.0",
-    openapi_tags=[{
-        "name": "Address",
-        "description": "Address standardization and geocoding operations"
-    }]
+    openapi_tags=[
+        {
+            "name": "Address",
+            "description": "Address standardization and geocoding operations",
+        }
+    ],
 )
+
 
 @app.get("/", include_in_schema=False)
 def health_check():
     return {"status": "healthy", "version": app.version}
+
 
 @app.post("/api/v1/address", response_model=AddressResponse, tags=["Address"])
 async def sanitize_address(payload: AddressRequest):
@@ -38,8 +41,7 @@ async def sanitize_address(payload: AddressRequest):
 
         # Execute geocoding
         address_results = strategy.geocode(
-            address=payload.address,
-            country_code=payload.country_code
+            address=payload.address, country_code=payload.country_code
         )
 
         # Build metadata
@@ -47,16 +49,10 @@ async def sanitize_address(payload: AddressRequest):
             "query": payload.address,
             "country": payload.country_code,
             "timestamp": datetime.utcnow(),
-            "totalResults": len(address_results)
+            "totalResults": len(address_results),
         }
 
-        return AddressResponse(
-            metadata=metadata,
-            addresses=address_results
-        )
+        return AddressResponse(metadata=metadata, addresses=address_results)
 
     except GeocodingError as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
-        )
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
