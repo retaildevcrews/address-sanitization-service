@@ -26,3 +26,8 @@ venv/
 
 # Alternatively, ignore all .env files with patterns (optional):
 *.env
+
+# ----------------------------
+# Other Files
+# ----------------------------
+results*
