@@ -83,7 +83,7 @@ Access endpoints at:
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure" # Available strategies: azure, azure_geocode, osm_nominatim, mapbox, loqate
+  strategy="azure" # Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate
 ```
 
 #### Sample Response
