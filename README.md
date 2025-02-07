@@ -58,6 +58,8 @@ docker compose up --build
 
 # OR run the application directly using Poetry
 poetry install  # Installs dependencies
+eval "source $(poetry env info --path)/bin/activate" # Activate the virtual environment created by poetry
+export $(grep -v '^#' /workspaces/address-sanitization-service/apps/credentials.env| xargs) # Set environment variables from credentials.env file
 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ```
