@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 from pydantic import BaseModel, Field
 
-VALID_STRATEGIES = ["azure", "google", "mapbox"]
+VALID_STRATEGIES = ["azure_search","azure_geocode", "google", "mapbox"]
 
 # ========================
 # Request Schema
@@ -23,8 +23,8 @@ class AddressRequest(BaseModel):
         description="ISO 3166-1 alpha-2 country code"
     )
     strategy: str = Field(
-        default="azure",
-        example="azure",
+        default="azure_search",
+        example="azure_search",
         description=f"Geocoding service provider to use. Options: {', '.join(VALID_STRATEGIES)}"
     )
 
@@ -33,7 +33,7 @@ class AddressRequest(BaseModel):
             "example": {
                 "address": "1 Microsoft Way, Redmond, WA 98052",
                 "country_code": "US",
-                "strategy": "azure"
+                "strategy": "azure_search"
             }
         }
 
@@ -109,7 +109,7 @@ class AddressResult(BaseModel):
     )
     serviceUsed: str = Field(
         ...,
-        example="azure",
+        example="azure_search",
         description="Identifier of the geocoding service provider"
     )
 
@@ -169,7 +169,7 @@ class AddressResponse(BaseModel):
                         "lat": 47.641673,
                         "lon": -122.125648
                     },
-                    "serviceUsed": "azure"
+                    "serviceUsed": "azure_search"
                 }]
             }
         }
