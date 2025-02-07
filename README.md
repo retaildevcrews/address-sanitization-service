@@ -1,6 +1,6 @@
 # Address Sanitization Service
 
-This repository contains a FastAPI application that sanitizes addresses using several providers, including Azure Maps API, MapBox, Loqate and Nominatim (OpenStreetMap). The service accepts an address query, country code, and strategy (currently supporting azure, mapbox, loqate and nominatim), then returns structured address data with confidence scores and metadata.
+This repository contains a FastAPI application that sanitizes addresses using several providers, including Azure Maps API, MapBox, Loqate and Nominatim (OpenStreetMap). The service accepts an address query, country code, and strategy (currently supporting azure_search, azure_geocode, mapbox, loqate and nominatim), then returns structured address data with confidence scores and metadata.
 
 ---
 
@@ -46,6 +46,7 @@ If the credentials.env file already exists, you can add a new variable to it usi
 echo 'MAPBOX_MAPS_KEY=your_actual_key_here' >> credentials.env
 echo 'LOQATE_API_KEY=your_actual_key_here' >> credentials.env
 echo "New variable added. If the service is already running, restart it to apply changes."
+
 ```
 
 ### Running the Application
@@ -56,8 +57,9 @@ docker compose up --build
 
 # OR run the application directly using Poetry
 poetry install  # Installs dependencies
+eval "source $(poetry env info --path)/bin/activate" # Activate the virtual environment created by poetry
+export $(grep -v '^#' /workspaces/address-sanitization-service/credentials.env| xargs) # Set environment variables from credentials.env file
 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
 ```
 
 Access endpoints at:
@@ -79,7 +81,7 @@ Access endpoints at:
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure" # Available strategies: azure, osm_nominatim, mapbox, loqate
+  strategy="azure_search" # Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate
 ```
 
 #### Sample Response
@@ -101,7 +103,7 @@ http POST localhost:8000/api/v1/address \
         "lat": 47.641673,
         "lon": -122.125648
       },
-      "serviceUsed": "azure"
+      "serviceUsed": "azure_search"
     }
   ],
   "metadata": {
@@ -129,12 +131,13 @@ Navigate to the `test_harness` folder and specify the geocoding strategies you w
 
 ```bash
 cd test_harness
-python run_test.py azure mapbox loqate
+python run_test.py azure_search azure_geocode mapbox loqate
 ```
 
 You can specify one or more strategies. Available options:
 
-- `azure` (Azure Maps API)
+- `azure_search` (Azure Maps Address API)
+- `azure_geocode` (Azure Maps Geocode API)
 - `osm_nominatim` (Nominatim / OpenStreetMap)
 - `mapbox` (MapBox API)
 - `loqate` (Loqate API)
@@ -163,7 +166,7 @@ After execution, check the `results.csv` file for structured results including:
   → Ensure you provide at least one strategy when running the script. Example:
 
   ```bash
-  python run_test.py azure mapbox loqate
+  python run_test.py azure_search mapbox loqate
   ```
 
 - **Error: "Request error with strategy 'X' for address 'Y'"**

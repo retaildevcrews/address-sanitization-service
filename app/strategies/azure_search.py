@@ -1,4 +1,4 @@
-# app/strategies/azure.py
+# app/strategies/azure_search.py
 import os
 import requests
 from typing import List, Dict
@@ -7,7 +7,7 @@ from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
 from ..utilities import create_empty_address_result
 
-@StrategyFactory.register("azure")
+@StrategyFactory.register("azure_search")
 class AzureMapsStrategy(GeocodingStrategy):
     # Configuration constants
     API_BASE_URL = "https://atlas.microsoft.com/search/address/json"
@@ -86,7 +86,7 @@ class AzureMapsStrategy(GeocodingStrategy):
 
         # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
-            return create_empty_address_result(country_code, "azure")
+            return create_empty_address_result(country_code, "azure_search")
 
         # Sort results by "score" descending
         sorted_results = sorted(
@@ -124,7 +124,7 @@ class AzureMapsStrategy(GeocodingStrategy):
                 lat=position.get("lat", 0.0),
                 lon=position.get("lon", 0.0)
             ),
-            serviceUsed="azure"
+            serviceUsed="azure_search"
         )
 
     def _get_confidence_score(self, result: Dict) -> float:
