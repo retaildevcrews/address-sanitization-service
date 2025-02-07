@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument(
         "strategies",
         nargs="+",
-        help="One or more geocoding strategies (e.g., azure, osm_nominatim, mapbox).",
+        help="One or more geocoding strategies (e.g., azure_search, osm_nominatim, mapbox).",
     )
     parser.add_argument(
         "--csv-file",

@@ -83,7 +83,7 @@ Access endpoints at:
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure" # Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate
+  strategy="azure_search" # Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate
 ```
 
 #### Sample Response
@@ -105,7 +105,7 @@ http POST localhost:8000/api/v1/address \
         "lat": 47.641673,
         "lon": -122.125648
       },
-      "serviceUsed": "azure"
+      "serviceUsed": "azure_search"
     }
   ],
   "metadata": {
@@ -167,7 +167,7 @@ After execution, check the `results.csv` file for structured results including:
   → Ensure you provide at least one strategy when running the script. Example:
 
   ```bash
-  python run_test.py azure mapbox loqate
+  python run_test.py azure_search mapbox loqate
   ```
 
 - **Error: "Request error with strategy 'X' for address 'Y'"**

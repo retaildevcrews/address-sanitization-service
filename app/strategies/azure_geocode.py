@@ -103,7 +103,7 @@ class AzureMapsStrategy(GeocodingStrategy):
             ),
             freeformAddress=address_info.get("formattedAddress", ""),
             coordinates=Coordinates(lat=coordinates[1], lon=coordinates[0]),
-            serviceUsed="azure geocode api",
+            serviceUsed="azure_geocode",
         )
 
     def _parse_confidence(self, confidence: str) -> float:
