@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException
 from .exceptions import GeocodingError
 from .schemas import AddressRequest, AddressResponse
 from .strategies import StrategyFactory
+from .exceptions import GeocodingError
+from .utils.address_sanitizer import sanitize_with_libpostal
 
 app = FastAPI(
     title="Address Sanitization Service",
@@ -36,12 +38,19 @@ async def sanitize_address(payload: AddressRequest):
     - **strategy**: Geocoding provider to use (azure, google, etc.)
     """
     try:
+
+        print ("Payload Address: ", payload.address)
+        # Pre-step: Sanitize the address using libpostal
+        sanitized_address = sanitize_with_libpostal(payload.address)
+        print ("Santized Address: ", sanitized_address)
+
         # Get the requested strategy
         strategy = StrategyFactory.get_strategy(payload.strategy)
 
-        # Execute geocoding
+        # Execute geocoding using the sanitized address
         address_results = strategy.geocode(
-            address=payload.address, country_code=payload.country_code
+            address=sanitized_address,
+            country_code=payload.country_code
         )
 
         # Build metadata

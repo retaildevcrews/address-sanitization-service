@@ -373,6 +373,20 @@ test = ["hypothesis (>=6.46.1)", "pytest (>=7.3.2)", "pytest-xdist (>=2.2.0)"]
 xml = ["lxml (>=4.9.2)"]
 
 [[package]]
+name = "postal"
+version = "1.1.10"
+description = "Python bindings to libpostal for fast international address parsing/normalization"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "postal-1.1.10.tar.gz", hash = "sha256:ca0f9693d61261e058a03d141a4fa065d9bbe67bd86484521450f0a9d0f9e77b"},
+]
+
+[package.dependencies]
+six = "*"
+
+[[package]]
 name = "pydantic"
 version = "2.10.6"
 description = "Data validation using Python type hints"
@@ -676,4 +690,4 @@ standard = ["colorama (>=0.4)", "httptools (>=0.6.3)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "2f7adf5d9f2ae3f19b38a73e40e83738b1e719f419065f586eff7c7b3e3d2bcc"
+content-hash = "76c83e8c9bdbce2b19911693a631ddaea22f2f891df816d935e80ce00b0e3231"
