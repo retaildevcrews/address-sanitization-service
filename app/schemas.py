@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 from pydantic import BaseModel, Field
 
-VALID_STRATEGIES = ["azure_search","azure_geocode", "google", "mapbox"]
+VALID_STRATEGIES = ["azure_search","azure_geocode","mapbox","loqate","osm_nominatim"]
 
 # ========================
 # Request Schema

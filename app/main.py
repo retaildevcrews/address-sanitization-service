@@ -35,7 +35,7 @@ async def sanitize_address(payload: AddressRequest):
     Parameters:
     - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
     - **country_code**: ISO 3166-1 alpha-2 country code (e.g., "US")
-    - **strategy**: Geocoding provider to use (azure, google, etc.)
+    - **strategy**: Geocoding provider to use (azure_search, mapbox, etc.)
     """
     try:
 
