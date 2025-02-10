@@ -1,13 +1,15 @@
 import argparse
+import dotenv
 import pandas as pd
 import pathlib
 from address_evaluator import AddressEvaluator
 from azure.ai.evaluation import evaluate
 
+dotenv.load_dotenv('../credentials.env')
 
 def run_evaluation(dataset_path, output_path):
     # Create the evaluators
-    azure_maps_evaluator = AddressEvaluator(strategy="azure")
+    azure_maps_evaluator = AddressEvaluator(strategy="azure_geocode")
     mapbox_evaluator = AddressEvaluator(strategy="mapbox")
 
     evaluators = {

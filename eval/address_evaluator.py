@@ -9,7 +9,7 @@ class AddressEvaluator:
     The floor of the score is 0.
     """
 
-    def __init__(self, strategy="azure"):
+    def __init__(self, strategy="azure_geocode"):
         self.name = strategy
         self.strategy = strategy
 
