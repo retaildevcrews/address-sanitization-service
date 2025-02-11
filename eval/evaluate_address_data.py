@@ -35,8 +35,15 @@ def run_evaluation(dataset_path, output_path):
     with open(summary_file_path, "w") as summary_file:
         json.dump(summary, summary_file, indent=4)
 
+    # Print the summary
     for result in summary:
         print(f"Input Address: {result['input_address']}, parser_score: {result['parser_score']}, result: {result['best_match']['freeformAddress']}, confidence: {result['best_match']['confidenceScore']}, service: {result['best_match']['serviceUsed']}")
+
+    average_parser_score = sum([x['parser_score'] for x in summary]) / len(summary)
+    average_confidence_score = sum([x['best_match']['confidenceScore'] for x in summary]) / len(summary)
+    print(f"Average parser score: {average_parser_score}")
+    print(f"Average confidence score: {average_confidence_score}")
+
 
 def summarize_result(result, evaluators):
     """
