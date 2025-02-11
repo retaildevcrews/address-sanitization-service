@@ -1,7 +1,10 @@
 import argparse
+import json
+import os
 import pandas as pd
 import pathlib
 from address_evaluator import AddressEvaluator
+from app.utils.address_parser import address_parser_score
 from azure.ai.evaluation import evaluate
 from dotenv import load_dotenv
 
@@ -26,7 +29,14 @@ def run_evaluation(dataset_path, output_path):
 
     # print(result)
     summary = summarize_result(result, evaluators)
-    print(summary)
+    # Write summary to JSON file
+    output_dir = os.path.dirname(output_path)
+    summary_file_path = os.path.join(output_dir, "results_summary.json")
+    with open(summary_file_path, "w") as summary_file:
+        json.dump(summary, summary_file, indent=4)
+
+    for result in summary:
+        print(f"Input Address: {result['input_address']}, parser_score: {result['parser_score']}, result: {result['best_match']['freeformAddress']}, confidence: {result['best_match']['confidenceScore']}, service: {result['best_match']['serviceUsed']}")
 
 def summarize_result(result, evaluators):
     """
@@ -39,6 +49,7 @@ def summarize_result(result, evaluators):
         result = {}
         matches = []
         result["input_address"] = row['inputs.address']
+        result["parser_score"] = address_parser_score(row['inputs.address'])
         result["country_code"] = row['inputs.country_code']
         for evaluator in evaluators.keys():
             matches.append(row[f"outputs.{evaluator}.address"])
