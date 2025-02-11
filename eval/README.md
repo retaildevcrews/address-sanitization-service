@@ -35,7 +35,8 @@ poetry run python ./eval/evaluate_address_data.py
 
 ```
 
-Results are output in JSON format to a file speciifed by the --output_path parameter. The default value is /eval/data/results.json
+A summary will be displayed that shows the input address, relevant scores, the processed result and asscoiated provider.
+Full Results are output in JSON format to a file speciifed by the --output_path parameter. The default value is /eval/data/results.json
 
 The results should look like the following:
 
@@ -75,5 +76,46 @@ The results should look like the following:
                     },
                     "serviceUsed": "azure"
                 },
+
+```
+
+### Understanding the results
+
+A summarized result will contain the following fields:
+
+| Field Name    | Source       | Description                                                                 |
+|---------------|--------------|-----------------------------------------------------------------------------|
+| input_address | Source Data  | The address from the source data                                            |
+| parser_score  | libpostal    | This is the percentage of address components that can be identified in the input_address |
+| country_code  | Source Data  | Country code from source data                                               |
+| provider_confidence_score | Sanitizer Result | For each provider evaluated, the confidence score of the best match |
+| best_match | Sanitizer Result | Matching address with highest confidence score |
+
+```json
+
+    {
+        "input_address": "aahh m tadeo 04 judas san lt mz",
+        "parser_score": 0.6,
+        "country_code": "PE",
+        "azure_search_confidenceScore": 0.0,
+        "mapbox_confidenceScore": 0.333333,
+        "best_match": {
+            "confidenceScore": 0.333333,
+            "address": {
+                "streetNumber": "",
+                "streetName": "Manzanares",
+                "municipality": "",
+                "municipalitySubdivision": "",
+                "postalCode": "",
+                "countryCode": "PE"
+            },
+            "freeformAddress": "Manzanares, Jun\u00edn, Peru",
+            "coordinates": {
+                "lat": -12.016045,
+                "lon": -75.34579
+            },
+            "serviceUsed": "mapbox"
+        }
+    },
 
 ```

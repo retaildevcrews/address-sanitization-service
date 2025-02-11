@@ -12,7 +12,7 @@ load_dotenv('credentials.env', override=True)
 
 def run_evaluation(dataset_path, output_path):
     # Create the evaluators
-    azure_maps_evaluator = AddressEvaluator(strategy="azure_geocode")
+    azure_maps_evaluator = AddressEvaluator(strategy="azure_search")
     mapbox_evaluator = AddressEvaluator(strategy="mapbox")
 
     evaluators = {
@@ -29,6 +29,7 @@ def run_evaluation(dataset_path, output_path):
 
     # print(result)
     summary = summarize_result(result, evaluators)
+
     # Write summary to JSON file
     output_dir = os.path.dirname(output_path)
     summary_file_path = os.path.join(output_dir, "results_summary.json")
