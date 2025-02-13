@@ -36,18 +36,23 @@ async def sanitize_address(payload: AddressRequest):
     - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
     - **country_code**: ISO 3166-1 alpha-2 country code (e.g., "US")
     - **strategy**: Geocoding provider to use (azure_search, mapbox, etc.)
+    - **use_libpostal**: Whether to sanitize the address using libpostal (default: True)
     """
     try:
+        print("Payload Address:", payload.address)
 
-        print ("Payload Address: ", payload.address)
-        # Pre-step: Sanitize the address using libpostal
-        sanitized_address = sanitize_with_libpostal(payload.address)
-        print ("Santized Address: ", sanitized_address)
+        # Check the use_libpostal flag from the payload
+        if payload.use_libpostal:
+            sanitized_address = sanitize_with_libpostal(payload.address)
+            print("Sanitized Address (libpostal):", sanitized_address)
+        else:
+            sanitized_address = payload.address
+            print("Skipping libpostal. Using raw address:", sanitized_address)
 
         # Get the requested strategy
         strategy = StrategyFactory.get_strategy(payload.strategy)
 
-        # Execute geocoding using the sanitized address
+        # Execute geocoding using the (possibly) sanitized address
         address_results = strategy.geocode(
             address=sanitized_address,
             country_code=payload.country_code
