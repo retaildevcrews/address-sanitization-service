@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 from pydantic import BaseModel, Field
 
-VALID_STRATEGIES = ["azure_search","azure_geocode","mapbox","loqate","osm_nominatim"]
+VALID_STRATEGIES = ["azure_search", "azure_geocode", "mapbox", "loqate", "osm_nominatim"]
 
 # ========================
 # Request Schema
@@ -27,13 +27,19 @@ class AddressRequest(BaseModel):
         example="azure_search",
         description=f"Geocoding service provider to use. Options: {', '.join(VALID_STRATEGIES)}"
     )
+    use_libpostal: bool = Field(
+        default=True,
+        example=True,
+        description="Whether to sanitize the address using libpostal"
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
                 "address": "1 Microsoft Way, Redmond, WA 98052",
                 "country_code": "US",
-                "strategy": "azure_search"
+                "strategy": "azure_search",
+                "use_libpostal": True
             }
         }
 
