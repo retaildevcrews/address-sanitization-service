@@ -81,7 +81,7 @@ async def sanitize_address(payload: AddressRequest):
 
         # Check the use_libpostal flag from the payload
         if payload.use_libpostal:
-            sanitized_address = sanitize_with_libpostal(payload.address)
+            sanitized_address = libpostal_expand_address(payload.address)
             print("Sanitized Address (libpostal):", sanitized_address)
         else:
             sanitized_address = payload.address
