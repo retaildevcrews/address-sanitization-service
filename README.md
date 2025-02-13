@@ -71,11 +71,11 @@ Access endpoints at:
 
 ## API Endpoints
 
-### Sanitize Address
+### 1. Sanitize Address
 
 **Endpoint**: `POST /api/v1/address`
 
-#### Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
+#### 1. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
 
 ```bash
 http POST localhost:8000/api/v1/address \
@@ -86,7 +86,7 @@ http POST localhost:8000/api/v1/address \
 
 ```
 
-#### Sample Response
+#### 1. Sample Response
 
 ```json
 
@@ -112,6 +112,54 @@ http POST localhost:8000/api/v1/address \
     "query": "1 Microsoft Way, Redmond, WA 98052",
     "timestamp": "2025-01-29T00:37:23.869661"
   }
+}
+```
+
+### 2. Parse Address
+
+**Endpoint**: `POST /api/v1/parse_address`
+
+#### 2. Sample Request using HTTPie
+
+```bash
+http GET localhost:8000/api/v1/parse_address address=="1 Microsoft Way, Redmond,WA 98052"
+
+```
+
+#### 2. Sample Response
+
+```json
+
+{
+    "address": "1 Microsoft Way, Redmond,WA 98052",
+    "parsed": {
+        "city": "redmond",
+        "house_number": "1",
+        "postcode": "98052",
+        "road": "microsoft way",
+        "state": "wa"
+    }
+}
+```
+
+### 3. Expand Address
+
+**Endpoint**: `POST /api/v1/expand_address`
+
+#### 3. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
+
+```bash
+http GET localhost:8000/api/v1/expand_address address=="1 Microsoft Way, Redmond,WA 98052"
+
+```
+
+#### 3. Sample Response
+
+```json
+
+{
+    "address": "1%20Microsoft%20Way,%20Redmond,%20WA%2098052",
+    "expanded_address": "1%20microsoft%20way %20redmond %20wa%2098052"
 }
 ```
 
