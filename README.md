@@ -117,7 +117,7 @@ http POST localhost:8000/api/v1/address \
 
 ### 2. Parse Address
 
-**Endpoint**: `POST /api/v1/parse_address`
+**Endpoint**: `GET /api/v1/parse_address`
 
 #### 2. Sample Request using HTTPie
 
@@ -144,7 +144,7 @@ http GET localhost:8000/api/v1/parse_address address=="1 Microsoft Way, Redmond,
 
 ### 3. Expand Address
 
-**Endpoint**: `POST /api/v1/expand_address`
+**Endpoint**: `GET /api/v1/expand_address`
 
 #### 3. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
 
@@ -156,10 +156,9 @@ http GET localhost:8000/api/v1/expand_address address=="1 Microsoft Way, Redmond
 #### 3. Sample Response
 
 ```json
-
 {
-    "address": "1%20Microsoft%20Way,%20Redmond,%20WA%2098052",
-    "expanded_address": "1%20microsoft%20way %20redmond %20wa%2098052"
+  "address": "1 Microsoft Way, Redmond, WA 9805",
+  "expanded_address": "1 microsoft way redmond washington 9805"
 }
 ```
 
