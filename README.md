@@ -75,13 +75,15 @@ Access endpoints at:
 
 **Endpoint**: `POST /api/v1/address`
 
-#### Sample Request using HTTPie
+#### Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
 
 ```bash
 http POST localhost:8000/api/v1/address \
   address="1 Microsoft Way, Redmond, WA 98052" \
   country_code="US" \
-  strategy="azure_search" # Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate
+  strategy="azure_search" \
+  use_libpostal=true
+
 ```
 
 #### Sample Response
