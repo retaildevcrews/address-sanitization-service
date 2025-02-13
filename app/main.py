@@ -1,13 +1,17 @@
 # app/main.py
+import json
+
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
+
+from .utils.libpostal import parse_address as libpostal_parse_address
+from .utils.libpostal import expand_address as libpostal_expand_address
 
 from .exceptions import GeocodingError
 from .schemas import AddressRequest, AddressResponse
 from .strategies import StrategyFactory
 from .exceptions import GeocodingError
-from .utils.address_sanitizer import sanitize_with_libpostal
 
 app = FastAPI(
     title="Address Sanitization Service",
@@ -27,6 +31,40 @@ def health_check():
     return {"status": "healthy", "version": app.version}
 
 
+@app.get("/api/v1/parse_address")
+async def parse_address(address: str):
+    """
+    Parse a free-form address into its components using libpostal
+
+    Parameters:
+    - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
+    """
+    try:
+        parsed = libpostal_parse_address(address)
+        parsed_dict = {component[1]: component[0] for component in parsed}
+        response = {"address": address, "parsed": parsed_dict}
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/expand_address")
+async def expand_address(address: str):
+    """
+    Parse a free-form address into its components using libpostal
+
+    Parameters:
+    - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
+    """
+    try:
+        result = libpostal_expand_address(address)
+
+        response = {"address": address, "expanded_address": result}
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/v1/address", response_model=AddressResponse, tags=["Address"])
 async def sanitize_address(payload: AddressRequest):
     """
@@ -43,7 +81,7 @@ async def sanitize_address(payload: AddressRequest):
 
         # Check the use_libpostal flag from the payload
         if payload.use_libpostal:
-            sanitized_address = sanitize_with_libpostal(payload.address)
+            sanitized_address = libpostal_expand_address(payload.address)
             print("Sanitized Address (libpostal):", sanitized_address)
         else:
             sanitized_address = payload.address
@@ -54,8 +92,7 @@ async def sanitize_address(payload: AddressRequest):
 
         # Execute geocoding using the (possibly) sanitized address
         address_results = strategy.geocode(
-            address=sanitized_address,
-            country_code=payload.country_code
+            address=sanitized_address, country_code=payload.country_code
         )
 
         # Build metadata
