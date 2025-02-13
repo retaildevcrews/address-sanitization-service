@@ -1,15 +1,20 @@
-# app/utils/address_sanitizer.py
+from postal.parser import parse_address as libpostal_parse_address
+from postal.expand import expand_address as libpostal_expand_address
 
-from postal.expand import expand_address
 
-def sanitize_with_libpostal(raw_address: str) -> str:
+def parse_address(address):
+    return libpostal_parse_address(address)
+
+
+def expand_address(raw_address: str) -> str:
     """
     Use libpostal to expand and normalize a free-form address.
     Returns the first expansion if available.
     """
     try:
         # expand_address returns a list of normalized variants
-        expansions = expand_address(raw_address)
+        expansions = libpostal_expand_address(raw_address)
+        print("Expansions: ", str(expansions))
         if expansions:
             # Return the first expanded address variant
             return expansions[0]
