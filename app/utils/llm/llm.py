@@ -1,4 +1,5 @@
 from openai import AzureOpenAI
+from openai.types import SystemMessage
 
 from os.path import dirname
 from os.path import abspath
@@ -24,25 +25,39 @@ def _generate_response_format(file_name, file_path=None):
         }
     }
 
-def _generate_system_prompt(prompt):
-    return {
-        "role": "system",
-        "content": prompt
-    }
-def _generate_user_message(user_prompt):
-    return {
-        "role": "user",
-        "content": user_prompt
-    }
+class Message:
+    def __init__(self, content):
+        self.content = content
 
-def _call_model(client:AzureOpenAI, model_deployment, system_message, user_prompt, response_format):
-    messages = [system_message, {"role": "user", "content": user_prompt}]
+
+class SystemMessage(Message):
+    def __init__(self, content):
+        super().__init__(content)
+        self.role = "system"
+
+
+class UserMessage(Message):
+    def __init__(self, content):
+        super().__init__(content)
+        self.role = "user"
+
+def _call_model(client:AzureOpenAI, model_deployment, messages, response_format):
     completion = client.chat.completions.create(
         model=model_deployment,
         messages=messages,
         response_format=response_format
     )
     return json.loads(completion.choices[0].message.content)
+
+def single_user_message(client:AzureOpenAI, model_deployment, system_message, user_prompt, response_format):
+    messages = [system_message, {"role": "user", "content": user_prompt}]
+    return _call_model(client,model_deployment, messages, response_format)
+
+def batch_user_message(client: AzureOpenAI, model_deployment, system_message, user_prompts, response_format):
+    messages = [system_message] + [{"role": "user", "content": prompt} for prompt in user_prompts]
+    return _call_model(client, model_deployment, messages, response_format)["responses"]
+
+
 
 class LLMEntityExtraction:
     def __init__(self):
@@ -63,13 +78,13 @@ class LLMEntityExtraction:
 
         self.model_deployment = AZURE_OPENAI_DEPLOYMENT
 
-        self.system_message_expansion = _generate_system_prompt(
+        self.system_message_expansion = SystemMessage(
             "You are an AI assistant that can understand Peruvian addresses."
             "Given the address below, expand the abbreviations, if any, and correct the word cases, when needed."
             "If you find an abbreviation that is ambiguous, use its most common meaning when expanding it."
         )
 
-        self.system_message_extraction = _generate_system_prompt(
+        self.system_message_extraction = SystemMessage(
             "You are an AI assistant that can extract address entities from Peruvian addresses."
             "Given the address below, extract the address entities following the provided schema."
             "If the address doesn't contain any of the fields in the schema, those values should be null."
@@ -84,7 +99,7 @@ class LLMEntityExtraction:
 
     # not used in the workflow - just for quick testing
     def get_address_expansion(self, address: str) -> dict:
-        return _call_model(self.client,
+        return single_user_message(self.client,
                            self.model_deployment,
                            self.system_message_expansion,
                            address,
@@ -92,7 +107,7 @@ class LLMEntityExtraction:
 
     # not used in the workflow - just for quick testing
     def get_address_entities(self, address: str) -> dict:
-        return _call_model(self.client,
+        return single_user_message(self.client,
                            self.model_deployment,
                            self.system_message_extraction,
                            address,
@@ -116,15 +131,12 @@ class LLMEntityExtraction:
         max_retries = 5
 
         def process_batch(records):
-            messages = [self.system_message_expansion] + [
-                {"role": "user", "content": record} for record in records
-            ]
-            completion = self.client.chat.completions.create(
-                model=self.model_deployment,
-                messages=messages,
-                response_format=self.batch_response_format_expansion
-            )
-            responses = json.loads(completion.choices[0].message.content)["responses"]
+
+            responses = batch_user_message(self.client,
+                           self.model_deployment,
+                           self.system_message_extraction,
+                           records,
+                           self.response_format_extraction)
             for response in responses:
                 response["error"] = None
             return responses
