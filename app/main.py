@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 
 from .parsers_and_expanders.libpostal import parse_address as libpostal_parse_address
 from .parsers_and_expanders.libpostal import expand_address as libpostal_expand_address
+from .parsers_and_expanders.llm import LLMEntityExtraction
 
 from .exceptions import GeocodingError
 from .schemas import AddressRequest, AddressResponse
@@ -25,14 +26,16 @@ app = FastAPI(
     ],
 )
 
+llm_extractor = LLMEntityExtraction()
+
 
 @app.get("/", include_in_schema=False)
 def health_check():
     return {"status": "healthy", "version": app.version}
 
 
-@app.get("/api/v1/parse_address")
-async def parse_address(address: str):
+@app.get("/api/v1/parse_address_libpostal")
+async def parse_address_libpostal(address: str):
     """
     Parse a free-form address into its components using libpostal
 
@@ -48,8 +51,8 @@ async def parse_address(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/expand_address")
-async def expand_address(address: str):
+@app.get("/api/v1/expand_address_libpostal")
+async def expand_address_libpostal(address: str):
     """
     Parse a free-form address into its components using libpostal
 
@@ -60,6 +63,35 @@ async def expand_address(address: str):
         result = libpostal_expand_address(address)
 
         response = {"address": address, "expanded_address": result}
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/parse_address_llm")
+async def parse_address_llm(address: str):
+    """
+    Parse a free-form address into its components using llm
+
+    Parameters:
+    - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
+    """
+    try:
+        response = llm_extractor.parse_address(address)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/expand_address_llm")
+async def expand_address_llm(address: str):
+    """
+    Parse a free-form address into its components using llm
+    Parameters:
+    - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
+    """
+    try:
+        response = llm_extractor.expand_address(address)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
