@@ -6,7 +6,7 @@ from os.path import dirname
 from os.path import join as join_path
 from openai import AzureOpenAI
 from os import getenv
-from app.utils.llm_utils.azure_openai_utils import (
+from app.utils.azure_openai_utils import (
     call_model,
     call_model_batch,
 )
