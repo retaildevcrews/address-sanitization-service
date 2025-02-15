@@ -12,5 +12,11 @@ class TestLLMAddressUtils(unittest.TestCase):
         print("RESULT", result)
         assert result is not None
 
+    def test_llm_address_entities(self):
+        llm_extractor= LLMEntityExtraction()
+        result = llm_extractor.get_address_entities(self.address)
+        print("RESULT", result)
+        assert result is not None
+
 if __name__ == "__main__":
     unittest.main()
