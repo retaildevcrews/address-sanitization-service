@@ -11,6 +11,7 @@ from app.utils.azure_openai_utils import (
     call_model_batch,
 )
 
+
 def generate_response_format(file_name, file_path=None):
     if file_path is None:
         file_path = abspath(dirname(__file__))
@@ -25,7 +26,6 @@ def generate_response_format(file_name, file_path=None):
         "type": "json_schema",
         "json_schema": {"name": file_name, "schema": address_schema, "strict": True},
     }
-
 
 
 class LLMEntityExtraction:
@@ -78,21 +78,21 @@ class LLMEntityExtraction:
     # not used in the workflow - just for quick testing
     def expand_address(self, address: str) -> dict:
         return call_model(
-            self.client,
-            self.model_deployment,
-            self.system_message_expansion_prompt,
-            address,
-            self.response_format_expansion,
+            client=self.client,
+            model_deployment=self.model_deployment,
+            system_prompt=self.system_message_expansion_prompt,
+            user_prompt=address,
+            response_format=self.response_format_expansion,
         )
 
     # not used in the workflow - just for quick testing
     def parse_address(self, address: str) -> dict:
         return call_model(
-            self.client,
-            self.model_deployment,
-            self.system_message_extraction_prompt,
-            address,
-            self.response_format_extraction,
+            client=self.client,
+            model_deployment=self.model_deployment,
+            system_prompt=self.system_message_extraction_prompt,
+            user_prompt=address,
+            response_format=self.response_format_extraction,
         )
 
     # def get_address_expansion_batch(self, records: list) -> list:
