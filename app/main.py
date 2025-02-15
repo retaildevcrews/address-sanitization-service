@@ -5,8 +5,8 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 
-from .utils.libpostal import parse_address as libpostal_parse_address
-from .utils.libpostal import expand_address as libpostal_expand_address
+from .parsers_and_expanders.libpostal import parse_address as libpostal_parse_address
+from .parsers_and_expanders.libpostal import expand_address as libpostal_expand_address
 
 from .exceptions import GeocodingError
 from .schemas import AddressRequest, AddressResponse

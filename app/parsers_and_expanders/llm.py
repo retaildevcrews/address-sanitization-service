@@ -1,13 +1,31 @@
 import json
 import time
-
+from os.path import dirname
+from os.path import abspath
+from os.path import dirname
+from os.path import join as join_path
 from openai import AzureOpenAI
 from os import getenv
-from app.utils.llm.azure_openai_utils import (
+from app.utils.llm_utils.azure_openai_utils import (
     call_model,
     call_model_batch,
-    generate_response_format,
 )
+
+def generate_response_format(file_name, file_path=None):
+    if file_path is None:
+        file_path = abspath(dirname(__file__))
+    schema_file = join_path(file_path, file_name)
+    # json_schema object can only have alphanumeric characters
+    if "." in file_name:
+        file_name = file_name.split(".")[0]
+    file_name = "".join(e for e in file_name if e.isalnum())
+    with open(schema_file, "r") as file:
+        address_schema = json.loads(file.read())
+    return {
+        "type": "json_schema",
+        "json_schema": {"name": file_name, "schema": address_schema, "strict": True},
+    }
+
 
 
 class LLMEntityExtraction:
@@ -58,7 +76,7 @@ class LLMEntityExtraction:
             """
 
     # not used in the workflow - just for quick testing
-    def get_address_expansion(self, address: str) -> dict:
+    def expand_address(self, address: str) -> dict:
         return call_model(
             self.client,
             self.model_deployment,
@@ -68,7 +86,7 @@ class LLMEntityExtraction:
         )
 
     # not used in the workflow - just for quick testing
-    def get_address_entities(self, address: str) -> dict:
+    def parse_address(self, address: str) -> dict:
         return call_model(
             self.client,
             self.model_deployment,
