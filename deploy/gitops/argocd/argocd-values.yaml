@@ -7,11 +7,6 @@ configs:
   params:
     server.insecure: true
     application.namespaces: "*"
-  repositories:
-    gitops:
-      url: https://github.com/retaildevcrews/address-sanitization-service
-      name: gitops
-      type: git
 server:
   ingress:
     enabled: true
