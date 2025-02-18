@@ -70,24 +70,28 @@ async def expand_address_libpostal(address: str):
 
 
 @app.post("/api/v1/address/expand/libpostal/batch")
-async def expand_address_libpostal_batch(addresses: list[str]):
+async def expand_address_libpostal_batch(addresses: list):
     """
-    expand addresses passed in as an array of addresses in the format:
-    ["1 Microsoft Way, Redmond, WA 98052",
-     "2 Microsoft Way, Redmond, WA 98052",
-     "3 Microsoft Way, Redmond, WA 98052"]
+    Expand addresses passed in as an array of addresses in the format:
+    [
+        {"address": "1 Microsoft Way, Redmond, WA 98052"},
+        {"address": "2 Microsoft Way, Redmond, WA 98052"},
+        {"address": "3 Microsoft Way, Redmond, WA 98052"}
+    ]
+
+    Parameters:
+    - **addresses**: List of address objects
     """
     try:
+        address_strings = [address["address"] for address in addresses]
         executor = batch_executor.BatchExecutor(
             func=libpostal_expand_address, num_threads=5, delay=0.5
         )
         results = []
-        for address in addresses:
-            print(f"Address: {address}")
+
+        for address in address_strings:
             result = executor.execute(address)
-            print(f"Result: {result}")
             results.append(result)
-        # expanded_addresses = [executor.execute(address) for address in addresses]
         return {"expanded_addresses": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -118,6 +122,34 @@ async def expand_address_llm(address: str):
     try:
         response = llm_extractor.expand_address(address)
         return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/address/expand/llm/batch")
+async def expand_address_llm_batch(addresses: list):
+    """
+    Expand addresses passed in as an array of addresses in the format:
+    [
+        {"address": "1 Microsoft Way, Redmond, WA 98052"},
+        {"address": "2 Microsoft Way, Redmond, WA 98052"},
+        {"address": "3 Microsoft Way, Redmond, WA 98052"}
+    ]
+
+    Parameters:
+    - **addresses**: List of address objects
+    """
+    try:
+        address_strings = [address["address"] for address in addresses]
+        executor = batch_executor.BatchExecutor(
+            func=llm_extractor.expand_address, num_threads=5, delay=0.5
+        )
+        results = []
+
+        for address in address_strings:
+            result = executor.execute(address)
+            results.append(result)
+        return {"expanded_addresses": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
