@@ -17,7 +17,7 @@ server:
     hosts: 
     - argocd.joaquin.dev
     tls:
-      - secretName: argocd-tls
+      - secretName: argocd-server-tls
         hosts:
           - argocd.joaquin.dev
     https: true
