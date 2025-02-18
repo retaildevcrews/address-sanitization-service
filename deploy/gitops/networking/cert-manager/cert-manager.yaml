@@ -20,7 +20,7 @@ spec:
     helm:
       valueFiles:
       - $values/deploy/gitops/networking/cert-manager/cert-manager-values.yaml
-  - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
+  - repoURL: https://github.com/retaildevcrews/address-sanitization-service
     targetRevision: joaquinrz-gitops
     ref: values
   syncPolicy:
@@ -53,7 +53,7 @@ spec:
     helm:
       valueFiles:
       - $values/deploy/gitops/networking/cert-manager/cluster-issuer-values.yaml
-  - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
+  - repoURL: https://github.com/retaildevcrews/address-sanitization-service
     targetRevision: joaquinrz-gitops
     ref: values
   syncPolicy:

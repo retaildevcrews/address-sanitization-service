@@ -9,7 +9,7 @@ configs:
     application.namespaces: "*"
   repositories:
     gitops:
-      url: https://github.com/retaildevcrews/address-sanitization-service.git
+      url: https://github.com/retaildevcrews/address-sanitization-service
       name: gitops
       type: git
 server:
