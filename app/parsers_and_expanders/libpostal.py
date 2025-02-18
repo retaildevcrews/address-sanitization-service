@@ -14,12 +14,12 @@ def expand_address(raw_address: str) -> str:
     try:
         # expand_address returns a list of normalized variants
         expansions = libpostal_expand_address(raw_address)
-        print("Expansions: ", str(expansions))
         if expansions:
-            # Return the first expanded address variant
-            return expansions[0]
+            # Return an object that contains original address and expanded address
+            expanded_address = expansions[0]
         else:
-            return raw_address
+            expanded_address = "unable to expand address"
+        return {"original_address": raw_address, "expanded_address": expanded_address}
     except Exception as e:
         print("Failed to expand address due to:", e)
         return raw_address
