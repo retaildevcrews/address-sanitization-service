@@ -13,6 +13,7 @@ from .exceptions import GeocodingError
 from .schemas import AddressRequest, AddressResponse
 from .strategies import StrategyFactory
 from .exceptions import GeocodingError
+from .utils import batch_executor
 
 app = FastAPI(
     title="Address Sanitization Service",
@@ -34,7 +35,7 @@ def health_check():
     return {"status": "healthy", "version": app.version}
 
 
-@app.get("/api/v1/parse_address_libpostal")
+@app.get("/api/v1/address/parse/libpostal")
 async def parse_address_libpostal(address: str):
     """
     Parse a free-form address into its components using libpostal
@@ -51,7 +52,7 @@ async def parse_address_libpostal(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/expand_address_libpostal")
+@app.get("/api/v1/address/expand/libpostal")
 async def expand_address_libpostal(address: str):
     """
     Parse a free-form address into its components using libpostal
@@ -68,7 +69,31 @@ async def expand_address_libpostal(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/parse_address_llm")
+@app.post("/api/v1/address/expand/libpostal/batch")
+async def expand_address_libpostal_batch(addresses: list[str]):
+    """
+    expand addresses passed in as an array of addresses in the format:
+    ["1 Microsoft Way, Redmond, WA 98052",
+     "2 Microsoft Way, Redmond, WA 98052",
+     "3 Microsoft Way, Redmond, WA 98052"]
+    """
+    try:
+        executor = batch_executor.BatchExecutor(
+            func=libpostal_expand_address, num_threads=5, delay=0.5
+        )
+        results = []
+        for address in addresses:
+            print(f"Address: {address}")
+            result = executor.execute(address)
+            print(f"Result: {result}")
+            results.append(result)
+        # expanded_addresses = [executor.execute(address) for address in addresses]
+        return {"expanded_addresses": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/address/parse/llm")
 async def parse_address_llm(address: str):
     """
     Parse a free-form address into its components using llm
@@ -83,7 +108,7 @@ async def parse_address_llm(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/expand_address_llm")
+@app.get("/api/v1/address/expand/llm")
 async def expand_address_llm(address: str):
     """
     Parse a free-form address into its components using llm
