@@ -117,7 +117,7 @@ http POST localhost:8000/api/v1/address \
 
 ### 2. Parse Address
 
-**Endpoint**: `POST /api/v1/parse_address_libpostal`
+**Endpoint**: `GET /api/v1/parse_address_libpostal`
 
 #### 2. Sample Request using HTTPie
 
@@ -129,7 +129,6 @@ http GET localhost:8000/api/v1/parse_address_libpostal address=="1 Microsoft Way
 #### 2. Sample Response
 
 ```json
-
 {
     "address": "1 Microsoft Way, Redmond,WA 98052",
     "parsed": {
@@ -144,7 +143,7 @@ http GET localhost:8000/api/v1/parse_address_libpostal address=="1 Microsoft Way
 
 ### 3. Expand Address LibPostal
 
-**Endpoint**: `POST /api/v1/expand_address_libpostal`
+**Endpoint**: `GET /api/v1/expand_address_libpostal`
 
 #### 3. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
 
@@ -156,16 +155,15 @@ http GET localhost:8000/api/v1/expand_address_libpostal address=="1 Microsoft Wa
 #### 3. Sample Response
 
 ```json
-
 {
-    "address": "1%20Microsoft%20Way,%20Redmond,%20WA%2098052",
-    "expanded_address": "1%20microsoft%20way %20redmond %20wa%2098052"
+  "address": "1 Microsoft Way, Redmond,WA 98052",
+  "expanded_address": "1 microsoft way redmondwashington 98052"
 }
 ```
 
 ### 4. Parse Address
 
-**Endpoint**: `POST /api/v1/parse_address_llm`
+**Endpoint**: `GET /api/v1/parse_address_llm`
 
 #### 4. Sample Request using HTTPie
 
@@ -177,22 +175,25 @@ http GET localhost:8000/api/v1/parse_address_llm address=="1 Microsoft Way, Redm
 #### 4. Sample Response
 
 ```json
-
 {
-    "address": "1 Microsoft Way, Redmond,WA 98052",
-    "parsed": {
-        "city": "redmond",
-        "house_number": "1",
-        "postcode": "98052",
-        "road": "microsoft way",
-        "state": "wa"
-    }
+  "streetName": "Microsoft Way",
+  "streetNumber": "1",
+  "block": null,
+  "lot": null,
+  "neighbourhood": null,
+  "municipality": "Redmond",
+  "municipalitySubdivision": null,
+  "country": "United States",
+  "countryCode": "US",
+  "countrySubdivision": "Washington",
+  "countrySecondarySubdivision": null,
+  "postalCode": 98052
 }
 ```
 
 ### 5. Expand Address llm
 
-**Endpoint**: `POST /api/v1/expand_address_llm`
+**Endpoint**: `GET /api/v1/expand_address_llm`
 
 #### 5. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
 
@@ -204,10 +205,9 @@ http GET localhost:8000/api/v1/expand_address_llm address=="1 Microsoft Way, Red
 #### 5. Sample Response
 
 ```json
-
 {
-    "address": "1%20Microsoft%20Way,%20Redmond,%20WA%2098052",
-    "expanded_address": "1%20microsoft%20way %20redmond %20wa%2098052"
+  "original_address": "1 Microsoft Way, Redmond,WA 98052",
+  "expanded_address": "1 Microsoft Way, Redmond, Washington 98052"
 }
 ```
 
