@@ -1,0 +1,28 @@
+configs:
+  rbac:
+    policy.default: 'role:readonly'
+  cm:
+    users.anonymous.enabled: "true"
+    timeout.reconciliation: 10s
+  params:
+    server.insecure: true
+    application.namespaces: "*"
+  repositories:
+    gitops:
+      url: https://github.com/joaquinrz/capi-gitops.git
+      name: gitops
+      type: git
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations: 
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      external-dns.alpha.kubernetes.io/hostname: argocd.kube101.dev
+    hosts: 
+    - argocd.kube101.dev
+    tls:
+      - secretName: argocd-tls
+        hosts:
+          - argocd.kube101.dev
+    https: true
