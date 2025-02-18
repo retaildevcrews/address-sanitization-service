@@ -6,7 +6,7 @@ applications:
   project: infra
   source:
     repoURL: https://github.com/retaildevcrews/address-sanitization-service
-    targetRevision: main
+    targetRevision: joaquinrz-gitops
     path: gitops
     directory:
       recurse: true
