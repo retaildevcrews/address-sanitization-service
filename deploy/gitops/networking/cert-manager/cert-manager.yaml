@@ -19,7 +19,7 @@ spec:
     chart: cert-manager
     helm:
       valueFiles:
-      - $values/gitops/networking/cert-manager/cert-manager-values.yaml
+      - $values/deploy/gitops/networking/cert-manager/cert-manager-values.yaml
   - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
     targetRevision: joaquinrz-gitops
     ref: values
@@ -52,7 +52,7 @@ spec:
     chart: cert-manager-issuers
     helm:
       valueFiles:
-      - $values/gitops/networking/cert-manager/cluster-issuer-values.yaml
+      - $values/deploy/gitops/networking/cert-manager/cluster-issuer-values.yaml
   - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
     targetRevision: joaquinrz-gitops
     ref: values

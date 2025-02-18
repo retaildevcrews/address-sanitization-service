@@ -14,7 +14,7 @@ spec:
     chart: argo-cd
     helm:
       valueFiles:
-      - $values/gitops/argocd/argocd-values.yaml
+      - $values/deploy/gitops/argocd/argocd-values.yaml
   - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
     targetRevision: joaquinrz-gitops
     ref: values

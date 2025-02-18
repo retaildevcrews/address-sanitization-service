@@ -19,7 +19,7 @@ spec:
     chart: ingress-nginx
     helm:
       valueFiles:
-      - $values/gitops/networking/ingress/ingress-nginx-values.yaml
+      - $values/deploy/gitops/networking/ingress/ingress-nginx-values.yaml
   - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
     targetRevision: joaquinrz-gitops
     ref: values
