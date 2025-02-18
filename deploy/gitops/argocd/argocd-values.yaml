@@ -8,6 +8,8 @@ configs:
     server.insecure: true
     application.namespaces: "*"
 server:
+  config:
+    url: "argocd.joaquin.dev"
   ingress:
     enabled: true
     ingressClassName: nginx
@@ -21,3 +23,6 @@ server:
         hosts:
           - argocd.joaquin.dev
     https: true
+
+
+
