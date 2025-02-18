@@ -10,9 +10,12 @@ from .parsers_and_expanders.libpostal import expand_address as libpostal_expand_
 from .parsers_and_expanders.llm import LLMEntityExtraction
 
 from .exceptions import GeocodingError
-from .schemas import AddressRequest, AddressResponse
+from .schemas import AddressRequest, AddressResponse, Address
 from .strategies import StrategyFactory
 from .exceptions import GeocodingError
+from .utils import batch_executor
+
+from typing import List
 
 app = FastAPI(
     title="Address Sanitization Service",
@@ -34,7 +37,7 @@ def health_check():
     return {"status": "healthy", "version": app.version}
 
 
-@app.get("/api/v1/parse_address_libpostal")
+@app.get("/api/v1/address/parse/libpostal")
 async def parse_address_libpostal(address: str):
     """
     Parse a free-form address into its components using libpostal
@@ -51,7 +54,7 @@ async def parse_address_libpostal(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/expand_address_libpostal")
+@app.get("/api/v1/address/expand/libpostal")
 async def expand_address_libpostal(address: str):
     """
     Parse a free-form address into its components using libpostal
@@ -68,7 +71,27 @@ async def expand_address_libpostal(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/parse_address_llm")
+@app.post("/api/v1/address/expand/libpostal/batch")
+async def expand_address_libpostal_batch(addresses: List[Address]):
+    """
+    Expand addresses passed in as an array of addresses
+
+
+    Parameters:
+    - **addresses**: List of address objects
+    """
+    try:
+        address_strings = [address.freeformAddress for address in addresses]
+        executor = batch_executor.BatchExecutor(
+            func=libpostal_expand_address, num_threads=5, delay=0.5
+        )
+        results = executor.execute(address_strings)
+        return {"expanded_addresses": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/address/parse/llm")
 async def parse_address_llm(address: str):
     """
     Parse a free-form address into its components using llm
@@ -83,7 +106,7 @@ async def parse_address_llm(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/expand_address_llm")
+@app.get("/api/v1/address/expand/llm")
 async def expand_address_llm(address: str):
     """
     Parse a free-form address into its components using llm
@@ -97,7 +120,27 @@ async def expand_address_llm(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/v1/address", response_model=AddressResponse, tags=["Address"])
+@app.post("/api/v1/address/expand/llm/batch")
+async def expand_address_llm_batch(addresses: List[Address]):
+    """
+    Expand addresses passed in as an array of addresses
+
+
+    Parameters:
+    - **addresses**: List of address objects
+    """
+    try:
+        address_strings = [address.freeformAddress for address in addresses]
+        executor = batch_executor.BatchExecutor(
+            func=llm_extractor.expand_address, num_threads=5, delay=0.5
+        )
+        results = executor.execute(address_strings)
+        return {"expanded_addresses": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/address/sanitize", response_model=AddressResponse, tags=["Address"])
 async def sanitize_address(payload: AddressRequest):
     """
     Process an address using the specified geocoding strategy
