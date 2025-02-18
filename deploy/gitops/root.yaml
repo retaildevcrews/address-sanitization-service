@@ -9,7 +9,7 @@ spec:
     server: https://kubernetes.default.svc
   project: infra
   source:
-    path: deplloy/gitops
+    path: deploy/gitops
     targetRevision: joaquinrz-gitops
     directory:
       recurse: true
