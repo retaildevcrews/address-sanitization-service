@@ -11,7 +11,6 @@ from app.utils.azure_openai_utils import (
     call_model_batch,
 )
 
-
 def generate_response_format(file_name, file_path=None):
     if file_path is None:
         file_path = abspath(dirname(__file__))
@@ -27,13 +26,24 @@ def generate_response_format(file_name, file_path=None):
         "json_schema": {"name": file_name, "schema": address_schema, "strict": True},
     }
 
-
 class LLMEntityExtraction:
     def __init__(self):
         AZURE_OPENAI_API_KEY = getenv("AZURE_OPENAI_API_KEY")
         AZURE_OPENAI_API_VERSION = getenv("AZURE_OPENAI_API_VERSION")
         AZURE_OPENAI_ENDPOINT = getenv("AZURE_OPENAI_ENDPOINT")
         AZURE_OPENAI_DEPLOYMENT = getenv("AZURE_OPENAI_DEPLOYMENT")
+
+        # Validate that all required environment variables are set
+        required_vars = {
+            "AZURE_OPENAI_API_KEY": AZURE_OPENAI_API_KEY,
+            "AZURE_OPENAI_API_VERSION": AZURE_OPENAI_API_VERSION,
+            "AZURE_OPENAI_ENDPOINT": AZURE_OPENAI_ENDPOINT,
+            "AZURE_OPENAI_DEPLOYMENT": AZURE_OPENAI_DEPLOYMENT,
+        }
+        for var_name, var_value in required_vars.items():
+            if not var_value:
+                raise ValueError(f"The environment variable '{var_name}' is not set or is empty.")
+
 
         print("AZURE_OPENAI_API_VERSION", AZURE_OPENAI_API_VERSION)
         print("AZURE_OPENAI_ENDPOINT", AZURE_OPENAI_ENDPOINT)
