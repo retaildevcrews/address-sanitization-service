@@ -20,7 +20,7 @@ spec:
     helm:
       valueFiles:
       - $values/gitops/networking/external-dns/external-dns-values.yaml
-  - repoURL: https://github.com/joaquinrz/capi-gitops.git
+  - repoURL: https://github.com/retaildevcrews/address-sanitization-service.git
     targetRevision: main
     ref: values
   syncPolicy:

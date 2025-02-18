@@ -5,7 +5,7 @@ applications:
   - resources-finalizer.argocd.argoproj.io
   project: infra
   source:
-    repoURL: https://github.com/joaquinrz/capi-gitops
+    repoURL: https://github.com/retaildevcrews/address-sanitization-service
     targetRevision: main
     path: gitops
     directory:

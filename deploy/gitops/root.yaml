@@ -14,7 +14,7 @@ spec:
     directory:
       recurse: true
       exclude: '{*values.yaml,*dashboard.yaml,*policy.yaml,*resource.yaml}'
-    repoURL: https://github.com/joaquinrz/capi-gitops
+    repoURL: https://github.com/retaildevcrews/address-sanitization-service
   syncPolicy:
     automated:
       prune: true
