@@ -88,6 +88,7 @@ async def expand_address(
         description="Free-form address string (e.g. '1 Microsoft Way, Redmond, WA 98052')",
     )
 ):
+
     """
     Parse a free-form address into its components using libpostal
 
