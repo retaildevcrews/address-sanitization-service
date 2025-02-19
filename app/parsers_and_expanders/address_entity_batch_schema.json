@@ -1,0 +1,70 @@
+{
+  "type": "object",
+  "properties": {
+    "responses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "streetName": {
+            "type": ["string", "null"]
+          },
+          "streetNumber": {
+            "type": ["string", "null"]
+          },
+          "block": {
+            "type": ["string", "null"]
+          },
+          "lot": {
+            "type": ["string", "null"]
+          },
+          "neighbourhood": {
+            "type": ["string", "null"]
+          },
+          "municipality": {
+            "type": ["string", "null"]
+          },
+          "municipalitySubdivision": {
+            "type": ["string", "null"]
+          },
+          "country": {
+            "type": ["string", "null"]
+          },
+          "countryCode": {
+            "type": ["string", "null"]
+          },
+          "countrySubdivision": {
+            "type": ["string", "null"]
+          },
+          "countrySecondarySubdivision": {
+            "type": ["string", "null"]
+          },
+          "postalCode": {
+            "type": ["number", "null"]
+          }
+        },
+        "required": [
+          "id",
+          "streetName",
+          "streetNumber",
+          "block",
+          "lot",
+          "neighbourhood",
+          "municipality",
+          "municipalitySubdivision",
+          "country",
+          "countryCode",
+          "countrySubdivision",
+          "countrySecondarySubdivision",
+          "postalCode"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["responses"],
+  "additionalProperties": false
+}

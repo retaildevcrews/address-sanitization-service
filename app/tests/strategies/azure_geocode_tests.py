@@ -1,6 +1,8 @@
 import unittest
 
+
 from app.strategies.azure_geocode import AzureMapsStrategy
+
 
 
 class TestAzureGeocode(unittest.TestCase):

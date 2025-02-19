@@ -1,0 +1,16 @@
+{
+    "type": "object",
+    "properties": {
+      "original_address": {
+        "type": ["string"]
+      },
+      "expanded_address": {
+        "type": ["string"]
+      }
+    },
+    "required": [
+      "original_address",
+      "expanded_address"
+    ],
+    "additionalProperties": false
+}
