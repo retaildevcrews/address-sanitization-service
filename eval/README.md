@@ -30,6 +30,7 @@ Evalations can be run on a .jsonl dataset using the --dataset_path parameter. Th
 ```bash
 
 # run the application directly using Poetry from the project root
+export $(grep -v '^#' /workspaces/address-sanitization-service/credentials.env| xargs)
 poetry install  # Installs dependencies
 poetry run python ./eval/evaluate_address_data.py
 
