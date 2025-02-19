@@ -166,8 +166,12 @@ async def sanitize_address(payload: AddressRequest):
         if payload.use_libpostal:
             # Strategy methods expect string input, expand_address returns a dict
             # only provide the expanded_address to the strategy
-            sanitized_address = libpostal_expand_address(payload.address)['expanded_address']
-            print("Sanitized Address (libpostal):", sanitized_address)
+            expanded_address_dict = libpostal_expand_address(payload.address)
+            if 'expanded_address' in expanded_address_dict:
+                sanitized_address = expanded_address_dict['expanded_address']
+                print("Sanitized Address (libpostal):", sanitized_address)
+            else:
+                raise HTTPException(status_code=500, detail="Expanded address not found in the response from libpostal")
         else:
             sanitized_address = payload.address
             print("Skipping libpostal. Using raw address:", sanitized_address)
