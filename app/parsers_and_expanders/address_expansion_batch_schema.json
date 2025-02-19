@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "responses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "expanded_address": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "expanded_address"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["responses"],
+  "additionalProperties": false
+}
