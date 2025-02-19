@@ -4,6 +4,22 @@ from datetime import datetime
 from typing import List, Dict
 from pydantic import BaseModel, Field
 
+VALID_STRATEGIES = [
+    "azure_search",
+    "azure_geocode",
+    "mapbox",
+    "loqate",
+    "osm_nominatim",
+]
+
+
+class Address(BaseModel):
+    freeformAddress: str = Field(
+        ...,
+        example="1 Microsoft Way, Redmond, WA 98052",
+        description="Free-form address string to geocode",
+    )
+
 VALID_STRATEGIES = ["azure_search", "azure_geocode", "mapbox", "loqate", "osm_nominatim"]
 
 
@@ -20,18 +36,19 @@ class AddressRequest(BaseModel):
     address: str = Field(
         ...,
         example="1 Microsoft Way, Redmond, WA 98052",
-        description="Free-form address string to geocode"
+        description="Free-form address string to geocode",
     )
     country_code: str = Field(
         ...,
         min_length=2,
         max_length=2,
         example="US",
-        description="ISO 3166-1 alpha-2 country code"
+        description="ISO 3166-1 alpha-2 country code",
     )
     strategy: str = Field(
         default="azure_search",
         example="azure_search",
+        description=f"Geocoding service provider to use. Options: {', '.join(VALID_STRATEGIES)}",
         description=f"Geocoding provider to use. Options: {', '.join(VALID_STRATEGIES)}"
     )
     use_libpostal: bool = Field(
@@ -49,9 +66,10 @@ class AddressRequest(BaseModel):
                 "address": "1 Microsoft Way, Redmond, WA 98052",
                 "country_code": "US",
                 "strategy": "azure_search",
-                "use_libpostal": True
+                "use_libpostal": True,
             }
         }
+
 
 
 # ========================
@@ -62,15 +80,12 @@ class Coordinates(BaseModel):
     Represents latitude and longitude in decimal degrees (WGS 84).
     """
     lat: float = Field(
-        ...,
-        example=47.641673,
-        description="Latitude in decimal degrees (WGS 84)"
+        ..., example=47.641673, description="Latitude in decimal degrees (WGS 84)"
     )
     lon: float = Field(
-        ...,
-        example=-122.125648,
-        description="Longitude in decimal degrees (WGS 84)"
+        ..., example=-122.125648, description="Longitude in decimal degrees (WGS 84)"
     )
+
 
 
 class AddressPayload(BaseModel):
@@ -78,9 +93,7 @@ class AddressPayload(BaseModel):
     Represents the structured address components.
     """
     streetNumber: str = Field(
-        ...,
-        example="1",
-        description="Numeric portion of street address"
+        ..., example="1", description="Numeric portion of street address"
     )
     streetName: str = Field(
         ...,
@@ -88,27 +101,25 @@ class AddressPayload(BaseModel):
         description="Official street name (including any direction)"
     )
     municipality: str = Field(
-        ...,
-        example="Redmond",
-        description="Primary municipal jurisdiction (city/town)"
+        ..., example="Redmond", description="Primary municipal jurisdiction (city/town)"
     )
     municipalitySubdivision: str = Field(
         default="",
         example="King County",
-        description="Secondary municipal area (county/district)"
+        description="Secondary municipal area (county/district)",
     )
     postalCode: str = Field(
-        ...,
-        example="98052",
-        description="Postal code in local format"
+        ..., example="98052", description="Postal code in local format"
     )
     countryCode: str = Field(
         ...,
         min_length=2,
         max_length=3,
         example="US",
+        description="ISO country code (2 or 3 character format)",
         description="ISO country code (2- or 3-character format)"
     )
+
 
 
 class AddressResult(BaseModel):
@@ -121,26 +132,23 @@ class AddressResult(BaseModel):
         ge=0,
         le=1,
         example=0.9965,
-        description="Normalized confidence score (1 = highest certainty)"
+        description="Normalized confidence score (1 = highest certainty)",
     )
-    address: AddressPayload = Field(
-        ...,
-        description="Structured address components"
-    )
+    address: AddressPayload = Field(..., description="Structured address components")
     freeformAddress: str = Field(
         ...,
         example="1 Microsoft Way, Redmond, WA 98052",
         description="Complete address formatted by the provider"
     )
     coordinates: Coordinates = Field(
-        ...,
-        description="Geographic coordinates of the location"
+        ..., description="Geographic coordinates of the location"
     )
     serviceUsed: str = Field(
         ...,
         example="azure_search",
-        description="Identifier of the geocoding service provider"
+        description="Identifier of the geocoding service provider",
     )
+
 
 
 class Metadata(BaseModel):
@@ -156,14 +164,12 @@ class Metadata(BaseModel):
         description="Country code filter used in the search"
     )
     timestamp: datetime = Field(
-        ...,
-        description="UTC timestamp of API response generation"
+        ..., description="UTC timestamp of API response generation"
     )
     totalResults: int = Field(
-        ...,
-        ge=0,
-        description="Total number of matching addresses found"
+        ..., ge=0, description="Total number of matching addresses found"
     )
+
 
 
 # ========================
@@ -179,8 +185,7 @@ class AddressResponse(BaseModel):
         description="Summary information about the request"
     )
     addresses: List[AddressResult] = Field(
-        ...,
-        description="Ordered list of geocoding results (highest confidence first)"
+        ..., description="Ordered list of geocoding results (highest confidence first)"
     )
 
     class Config:
@@ -193,7 +198,7 @@ class AddressResponse(BaseModel):
                     "query": "1 Microsoft Way, Redmond, WA 98052",
                     "country": "US",
                     "timestamp": "2025-01-29T00:37:23.869661",
-                    "totalResults": 1
+                    "totalResults": 1,
                 },
                 "addresses": [{
                     "confidenceScore": 0.9965,

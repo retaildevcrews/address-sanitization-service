@@ -10,7 +10,6 @@ This repository contains a FastAPI application that sanitizes addresses using se
 - [Getting Started](#getting-started)
   - [Docker Compose](#docker-compose)
   - [Running the Application](#running-the-application)
-- [API Endpoints](#api-endpoints)
 - [Running the Test Harness](#running-the-test-harness)
 
 ---
@@ -69,99 +68,6 @@ Access endpoints at:
 
 ---
 
-## API Endpoints
-
-### 1. Sanitize Address
-
-**Endpoint**: `POST /api/v1/address`
-
-#### 1. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
-
-```bash
-http POST localhost:8000/api/v1/address \
-  address="1 Microsoft Way, Redmond, WA 98052" \
-  country_code="US" \
-  strategy="azure_search" \
-  use_libpostal=true
-
-```
-
-#### 1. Sample Response
-
-```json
-
-{
-  "addresses": [
-    {
-      "address": {
-        "countryCode": "US",
-        "municipality": "Redmond",
-        "postalCode": "98052",
-        "streetName": "Northeast One Microsoft Way",
-        "streetNumber": "1"
-      },
-      "confidenceScore": 0.9965,
-      "coordinates": {
-        "lat": 47.641673,
-        "lon": -122.125648
-      },
-      "serviceUsed": "azure_search"
-    }
-  ],
-  "metadata": {
-    "query": "1 Microsoft Way, Redmond, WA 98052",
-    "timestamp": "2025-01-29T00:37:23.869661"
-  }
-}
-```
-
-### 2. Parse Address
-
-**Endpoint**: `GET /api/v1/parse_address`
-
-#### 2. Sample Request using HTTPie
-
-```bash
-http GET localhost:8000/api/v1/parse_address address=="1 Microsoft Way, Redmond,WA 98052"
-
-```
-
-#### 2. Sample Response
-
-```json
-
-{
-    "address": "1 Microsoft Way, Redmond,WA 98052",
-    "parsed": {
-        "city": "redmond",
-        "house_number": "1",
-        "postcode": "98052",
-        "road": "microsoft way",
-        "state": "wa"
-    }
-}
-```
-
-### 3. Expand Address
-
-**Endpoint**: `GET /api/v1/expand_address`
-
-#### 3. Sample Request using HTTPie (Available strategies: azure_search, azure_geocode, osm_nominatim, mapbox, loqate)
-
-```bash
-http GET localhost:8000/api/v1/expand_address address=="1 Microsoft Way, Redmond,WA 98052"
-
-```
-
-#### 3. Sample Response
-
-```json
-{
-  "address": "1 Microsoft Way, Redmond, WA 9805",
-  "expanded_address": "1 microsoft way redmond washington 9805"
-}
-```
-
 ## Running the Test Harness
 
 The test harness allows you to evaluate different geocoding strategies by sending address queries to the FastAPI service and saving the results.
@@ -169,7 +75,7 @@ The test harness allows you to evaluate different geocoding strategies by sendin
 ### Prerequisites
 
 1. **Ensure the API is running**
-   The test harness sends requests to `http://localhost:8000/api/v1/address`. Make sure the FastAPI service is up and running.
+   The test harness sends requests to `http://localhost:8000/api/v1/address/sanitize`. Make sure the FastAPI service is up and running.
 
 2. **Prepare the Input Data**
    The `test_harness/peru.csv` file contains sample addresses from Peru. Ensure this file is in place or modify it with your own test data.
