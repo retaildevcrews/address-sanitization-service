@@ -4,11 +4,24 @@ import os
 import pandas as pd
 import pathlib
 from address_evaluator import AddressEvaluator
-from app.utils.address_parser import address_parser_score
+from app.parsers_and_expanders.libpostal import parse_address
 from azure.ai.evaluation import evaluate
 from dotenv import load_dotenv
 
 load_dotenv("credentials.env", override=True)
+
+
+def address_parser_score(address: str) -> float:
+    """
+    Use libpostal to parse an address and return the number of components parsed.
+    Score represents the percentage of 5 address components identified
+    """
+    try:
+        parsed = parse_address(address)["parsed_address"]
+        return min((len(parsed) / 5), 1)
+    except Exception as e:
+        print("Failed to parse address due to:", e)
+        return 0.0
 
 
 def run_evaluation(dataset_path, output_path):
