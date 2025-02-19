@@ -85,10 +85,10 @@ def summarize_result(result, evaluators):
         result["country_code"] = row["inputs.country_code"]
         for evaluator in evaluators.keys():
             if f"outputs.{evaluator}.address" in row:
-                matches.append(row[f"outputs.{evaluator}.address"])
-                result[f"{evaluator}_confidenceScore"] = row[
-                    f"outputs.{evaluator}.address"
-                ]["confidenceScore"]
+                address = row[f"outputs.{evaluator}.address"]
+                if isinstance(address, dict) and "confidenceScore" in address:
+                    matches.append(address)
+                    result[f"{evaluator}_confidenceScore"] = address["confidenceScore"]
         matches.sort(key=lambda x: x["confidenceScore"], reverse=True)
         result["best_match"] = matches[0]
         output.append(result)
