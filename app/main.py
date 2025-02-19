@@ -1,4 +1,5 @@
 # app/main.py
+from contextlib import asynccontextmanager
 import json
 
 from datetime import datetime
@@ -17,6 +18,15 @@ from .utils import batch_executor
 
 from typing import List
 
+llm_extractor = None
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global llm_extractor
+    try:
+        llm_extractor = LLMEntityExtraction()
+    except Exception as e:
+        print(f"Failed to initialize LLMEntityExtraction: {e}")
+
 app = FastAPI(
     title="Address Sanitization Service",
     description="Sanitizes addresses using multiple geocoding providers",
@@ -27,10 +37,8 @@ app = FastAPI(
             "description": "Address standardization and geocoding operations",
         }
     ],
+    lifespan=lifespan,
 )
-
-llm_extractor = LLMEntityExtraction()
-
 
 @app.get("/", include_in_schema=False)
 def health_check():
