@@ -23,6 +23,8 @@ from .utils import batch_executor
 from typing import List
 
 llm_extractor = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global llm_extractor
@@ -31,6 +33,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Failed to initialize LLMEntityExtraction: {e}")
     yield
+
 
 app = FastAPI(
     title="Address Sanitization Service",
@@ -44,6 +47,7 @@ app = FastAPI(
     ],
     lifespan=lifespan,
 )
+
 
 @app.get("/", include_in_schema=False)
 def health_check():
@@ -73,11 +77,17 @@ async def parse_address(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/address/expand/libpostal",
-         response_model=ExpandAddressResponse,
-         tags=["Address"])
-async def expand_address(address: str = Query(...,
-                                              description="Free-form address string (e.g. '1 Microsoft Way, Redmond, WA 98052')")):
+@app.get(
+    "/api/v1/address/expand/libpostal",
+    response_model=ExpandAddressResponse,
+    tags=["Address"],
+)
+async def expand_address(
+    address: str = Query(
+        ...,
+        description="Free-form address string (e.g. '1 Microsoft Way, Redmond, WA 98052')",
+    )
+):
     """
     Parse a free-form address into its components using libpostal
 
@@ -91,7 +101,7 @@ async def expand_address(address: str = Query(...,
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/v1/address/expand/libpostal/batch")
+@app.post("/api/v1/address/expand/libpostal/batch", tags=["Address"])
 async def expand_address_libpostal_batch(addresses: List[Address]):
     """
     Expand addresses passed in as an array of addresses
@@ -111,7 +121,7 @@ async def expand_address_libpostal_batch(addresses: List[Address]):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/address/parse/llm")
+@app.get("/api/v1/address/parse/llm", tags=["Address"])
 async def parse_address_llm(address: str):
     """
     Parse a free-form address into its components using llm
@@ -126,7 +136,7 @@ async def parse_address_llm(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/address/expand/llm")
+@app.get("/api/v1/address/expand/llm", tags=["Address"])
 async def expand_address_llm(address: str):
     """
     Parse a free-form address into its components using llm
@@ -140,7 +150,7 @@ async def expand_address_llm(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/v1/address/expand/llm/batch")
+@app.post("/api/v1/address/expand/llm/batch", tags=["Address"])
 async def expand_address_llm_batch(addresses: List[Address]):
     """
     Expand addresses passed in as an array of addresses
@@ -176,11 +186,14 @@ async def sanitize_address(payload: AddressRequest):
             # Strategy methods expect string input, expand_address returns a dict
             # only provide the expanded_address to the strategy
             expanded_address_dict = libpostal_expand_address(payload.address)
-            if 'expanded_address' in expanded_address_dict:
-                sanitized_address = expanded_address_dict['expanded_address']
+            if "expanded_address" in expanded_address_dict:
+                sanitized_address = expanded_address_dict["expanded_address"]
                 print("Sanitized Address (libpostal):", sanitized_address)
             else:
-                raise HTTPException(status_code=500, detail="Expanded address not found in the response from libpostal")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Expanded address not found in the response from libpostal",
+                )
         else:
             sanitized_address = payload.address
 

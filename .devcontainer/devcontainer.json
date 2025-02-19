@@ -17,11 +17,10 @@
     "ghcr.io/devcontainers-contrib/features/bin:1": {}, // for any binary release installation
     "ghcr.io/devcontainers-contrib/features/neovim-apt-get:1": {}
   },
-  // "hostRequirements": {
-  //  "cpus": 4,
-  //  "memory": "16gb",
-  //  "storage": "32gb"
-  // },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb"
+  },
   // forward ports
   "forwardPorts": [
     8000 // Address Sanitation Service
