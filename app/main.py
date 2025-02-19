@@ -1,4 +1,5 @@
 # app/main.py
+from contextlib import asynccontextmanager
 
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Query
@@ -21,6 +22,16 @@ from .utils import batch_executor
 
 from typing import List
 
+llm_extractor = None
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global llm_extractor
+    try:
+        llm_extractor = LLMEntityExtraction()
+    except Exception as e:
+        print(f"Failed to initialize LLMEntityExtraction: {e}")
+    yield
+
 app = FastAPI(
     title="Address Sanitization Service",
     description="Sanitizes addresses using multiple geocoding providers",
@@ -31,10 +42,8 @@ app = FastAPI(
             "description": "Address standardization and geocoding operations",
         }
     ],
+    lifespan=lifespan,
 )
-
-llm_extractor = LLMEntityExtraction()
-
 
 @app.get("/", include_in_schema=False)
 def health_check():
@@ -164,7 +173,14 @@ async def sanitize_address(payload: AddressRequest):
     try:
         # Check the use_libpostal flag from the payload
         if payload.use_libpostal:
-            sanitized_address = libpostal_expand_address(payload.address)["expanded_address"]
+            # Strategy methods expect string input, expand_address returns a dict
+            # only provide the expanded_address to the strategy
+            expanded_address_dict = libpostal_expand_address(payload.address)
+            if 'expanded_address' in expanded_address_dict:
+                sanitized_address = expanded_address_dict['expanded_address']
+                print("Sanitized Address (libpostal):", sanitized_address)
+            else:
+                raise HTTPException(status_code=500, detail="Expanded address not found in the response from libpostal")
         else:
             sanitized_address = payload.address
 
