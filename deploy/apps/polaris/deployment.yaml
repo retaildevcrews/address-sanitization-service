@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polaris
+  labels:
+    app: polaris
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: polaris
+  template:
+    metadata:
+      labels:
+        app: polaris
+    spec:
+      containers:
+      - name: polaris
+        image: ghcr.io/retaildevcrews/address-sanitization-service:latest
+        resources:
+          requests:
+            cpu: "1"
+            memory: "8Gi"
+          limits:
+            cpu: "2"
+            memory: "16Gi"        
+        ports:
+        - containerPort: 8080
+        env:
+        - name: AZURE_MAPS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: polaris-env
+              key: AZURE_MAPS_KEY
+        - name: AZURE_OPENAI_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: polaris-env
+              key: AZURE_OPENAI_ENDPOINT
+        - name: AZURE_OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: polaris-env
+              key: AZURE_OPENAI_API_KEY
+        - name: AZURE_OPENAI_API_VERSION
+          valueFrom:
+            secretKeyRef:
+              name: polaris-env
+              key: AZURE_OPENAI_API_VERSION
+        - name: AZURE_OPENAI_DEPLOYMENT
+          valueFrom:
+            secretKeyRef:
+              name: polaris-env
+              key: AZURE_OPENAI_DEPLOYMENT

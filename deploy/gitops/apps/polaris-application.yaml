@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: polaris
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: polaris
+  namespace: polaris
+spec:
+  project: apps
+  source:
+    repoURL: https://github.com/retaildevcrews/address-sanitization-service
+    targetRevision: joaquinrz-gitops
+    path: deploy/apps/polaris
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: polaris
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: -1
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 10m

@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: polaris-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns.alpha.kubernetes.io/hostname: polaris.joaquin.dev
+spec:
+  tls:
+  - hosts:
+    - polaris.joaquin.dev
+    secretName: polaris-tls
+  rules:
+  - host: polaris.joaquin.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: polaris
+            port:
+              number: 80
