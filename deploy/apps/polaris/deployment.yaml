@@ -17,6 +17,7 @@ spec:
       containers:
       - name: polaris
         image: ghcr.io/retaildevcrews/address-sanitization-service:latest
+        imagePullPolicy: Always
         resources:
           requests:
             cpu: "1"
