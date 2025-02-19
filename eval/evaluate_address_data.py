@@ -8,7 +8,8 @@ from app.utils.address_parser import address_parser_score
 from azure.ai.evaluation import evaluate
 from dotenv import load_dotenv
 
-load_dotenv('credentials.env', override=True)
+load_dotenv("credentials.env", override=True)
+
 
 def run_evaluation(dataset_path, output_path):
     # Create the evaluators
@@ -16,8 +17,8 @@ def run_evaluation(dataset_path, output_path):
     mapbox_evaluator = AddressEvaluator(strategy="mapbox")
 
     evaluators = {
-            azure_maps_evaluator.name: azure_maps_evaluator,
-            mapbox_evaluator.name: mapbox_evaluator,
+        azure_maps_evaluator.name: azure_maps_evaluator,
+        mapbox_evaluator.name: mapbox_evaluator,
     }
     # Run the evaluation
     result = evaluate(
@@ -38,10 +39,14 @@ def run_evaluation(dataset_path, output_path):
 
     # Print the summary
     for result in summary:
-        print(f"Input Address: {result['input_address']}, parser_score: {result['parser_score']}, result: {result['best_match']['freeformAddress']}, confidence: {result['best_match']['confidenceScore']}, service: {result['best_match']['serviceUsed']}")
+        print(
+            f"Input Address: {result['input_address']}, parser_score: {result['parser_score']}, result: {result['best_match']['freeformAddress']}, confidence: {result['best_match']['confidenceScore']}, service: {result['best_match']['serviceUsed']}"
+        )
 
-    average_parser_score = sum([x['parser_score'] for x in summary]) / len(summary)
-    average_confidence_score = sum([x['best_match']['confidenceScore'] for x in summary]) / len(summary)
+    average_parser_score = sum([x["parser_score"] for x in summary]) / len(summary)
+    average_confidence_score = sum(
+        [x["best_match"]["confidenceScore"] for x in summary]
+    ) / len(summary)
     print(f"Average parser score: {average_parser_score}")
     print(f"Average confidence score: {average_confidence_score}")
 
@@ -56,19 +61,21 @@ def summarize_result(result, evaluators):
     for row in rows:
         result = {}
         matches = []
-        result["input_address"] = row['inputs.address']
-        result["parser_score"] = address_parser_score(row['inputs.address'])
-        result["country_code"] = row['inputs.country_code']
+        result["input_address"] = row["inputs.address"]
+        result["parser_score"] = address_parser_score(row["inputs.address"])
+        result["country_code"] = row["inputs.country_code"]
         for evaluator in evaluators.keys():
             if f"outputs.{evaluator}.address" in row:
                 matches.append(row[f"outputs.{evaluator}.address"])
-                result[f"{evaluator}_confidenceScore"] = row[f"outputs.{evaluator}.address"]['confidenceScore']
-        matches.sort(key=lambda x: x['confidenceScore'], reverse=True)
+                result[f"{evaluator}_confidenceScore"] = row[
+                    f"outputs.{evaluator}.address"
+                ]["confidenceScore"]
+        matches.sort(key=lambda x: x["confidenceScore"], reverse=True)
         result["best_match"] = matches[0]
         output.append(result)
 
-
     return output
+
 
 if __name__ == "__main__":
     # Read the dataset path from the command line
@@ -76,7 +83,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_path",
         help="full path to the dataset .jsonl file",
-        default=str(pathlib.Path.cwd()) + "/eval/data/peru.jsonl",
+        default=str(pathlib.Path.cwd()) + "/eval/data/addresses.jsonl",
         type=str,
     )
     parser.add_argument(
