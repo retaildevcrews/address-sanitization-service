@@ -19,7 +19,7 @@ spec:
       chart: external-secrets
       helm:
         valueFiles:
-          - $values/deploy/gitops/infra/external-secrets/eso-values.yaml
+          - $values/deploy/gitops/security/external-secrets/eso-values.yaml
     - repoURL: https://github.com/retaildevcrews/address-sanitization-service
       targetRevision: joaquinrz-gitops      
       ref: values
