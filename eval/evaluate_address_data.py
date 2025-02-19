@@ -27,11 +27,17 @@ def address_parser_score(address: str) -> float:
 def run_evaluation(dataset_path, output_path):
     # Create the evaluators
     azure_maps_evaluator = AddressEvaluator(strategy="azure_search")
-    mapbox_evaluator = AddressEvaluator(strategy="mapbox")
+    azure_geocode_evaluator = AddressEvaluator(strategy="azure_geocode")
+    osm_evaluator = AddressEvaluator(strategy="osm_nominatim")
+    #mapbox_evaluator = AddressEvaluator(strategy="mapbox")
+
 
     evaluators = {
         azure_maps_evaluator.name: azure_maps_evaluator,
-        mapbox_evaluator.name: mapbox_evaluator,
+        azure_geocode_evaluator.name: azure_geocode_evaluator,
+        osm_evaluator.name: osm_evaluator,
+        #mapbox_evaluator.name: mapbox_evaluator,
+
     }
     # Run the evaluation
     result = evaluate(
