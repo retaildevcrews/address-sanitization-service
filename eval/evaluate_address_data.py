@@ -60,8 +60,9 @@ def summarize_result(result, evaluators):
         result["parser_score"] = address_parser_score(row['inputs.address'])
         result["country_code"] = row['inputs.country_code']
         for evaluator in evaluators.keys():
-            matches.append(row[f"outputs.{evaluator}.address"])
-            result[f"{evaluator}_confidenceScore"] = row[f"outputs.{evaluator}.address"]['confidenceScore']
+            if f"outputs.{evaluator}.address" in row:
+                matches.append(row[f"outputs.{evaluator}.address"])
+                result[f"{evaluator}_confidenceScore"] = row[f"outputs.{evaluator}.address"]['confidenceScore']
         matches.sort(key=lambda x: x['confidenceScore'], reverse=True)
         result["best_match"] = matches[0]
         output.append(result)
