@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets
+  namespace: argocd
+spec:
+  destination:
+    namespace: external-secrets
+    server: https://kubernetes.default.svc
+  project: infra
+  sources:
+    - repoURL: 'https://charts.external-secrets.io'
+      targetRevision: 0.14.2
+      chart: external-secrets
+      helm:
+        valueFiles:
+          - $values/deploy/gitops/infra/external-secrets/eso-values.yaml
+    - repoURL: https://github.com/retaildevcrews/address-sanitization-service
+      targetRevision: joaquinrz-gitops      
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: -1
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 10m
