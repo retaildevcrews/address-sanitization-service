@@ -29,7 +29,7 @@ def parse_args():
     )
     parser.add_argument(
         "--csv-file",
-        default="sample_data/peru.csv",
+        default="sample_data/addresses.csv",
         help="Path to the input CSV file with addresses.",
     )
     parser.add_argument(
