@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "joaquinr-ci" ]
     paths:
-      - 'app/**'  # Only trigger if something changed in app/
+      - 'app/**'  # Only trigger if something changed in the app/ folder
 
 jobs:
   build_and_push:
@@ -34,21 +34,25 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
+        env:
+          # Less verbose build logs
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_PROGRESS: plain
         with:
-          # Path to the directory with your Dockerfile (root of the repo)
+          # Directory containing your Dockerfile (root of the repo)
           context: .
-          # We want to push the image if this is a build on main
+          # Automatically push once built
           push: true
-          # Tags for the image: use "latest" and the commit SHA
+          # Tag the image with "latest" and the commit SHA
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
             ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
-          # Use local caching
+          # Enable caching
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Move cache (temp fix)
-        # Workaround due to known BuildKit caching limitations
+      # 6. Workaround to persist the new cache to speed up future builds
+      - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
