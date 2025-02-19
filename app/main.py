@@ -156,7 +156,9 @@ async def sanitize_address(payload: AddressRequest):
 
         # Check the use_libpostal flag from the payload
         if payload.use_libpostal:
-            sanitized_address = libpostal_expand_address(payload.address)
+            # Strategy methods expect string input, expand_address returns a dict
+            # only provide the expanded_address to the strategy
+            sanitized_address = libpostal_expand_address(payload.address)['expanded_address']
             print("Sanitized Address (libpostal):", sanitized_address)
         else:
             sanitized_address = payload.address
