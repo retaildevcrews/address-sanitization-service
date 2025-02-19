@@ -26,6 +26,7 @@ async def lifespan(app: FastAPI):
         llm_extractor = LLMEntityExtraction()
     except Exception as e:
         print(f"Failed to initialize LLMEntityExtraction: {e}")
+    yield
 
 app = FastAPI(
     title="Address Sanitization Service",
