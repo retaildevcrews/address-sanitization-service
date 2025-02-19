@@ -2,7 +2,7 @@ configs:
   rbac:
     policy.default: 'role:readonly'
   cm:
-    users.anonymous.enabled: "true"
+    users.anonymous.enabled: "false"
     timeout.reconciliation: 10s
   params:
     server.insecure: true
