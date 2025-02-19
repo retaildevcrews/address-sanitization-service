@@ -11,8 +11,9 @@ from .exceptions import GeocodingError
 from .schemas import (
     AddressRequest,
     AddressResponse,
-    ExpandAddressResponse,
     ParseAddressResponse,
+    ExpandAddressResponse,
+    Address,
 )
 from .strategies import StrategyFactory
 from .exceptions import GeocodingError
@@ -40,27 +41,34 @@ def health_check():
     return {"status": "healthy", "version": app.version}
 
 
-@app.get("/api/v1/address/parse/libpostal")
-async def parse_address_libpostal(address: str):
+@app.get(
+    "/api/v1/address/parse/libpostal",
+    response_model=ParseAddressResponse,
+    tags=["Address"],
+)
+async def parse_address(
+    address: str = Query(
+        ...,
+        description="Free-form address string (e.g. '1 Microsoft Way, Redmond, WA 98052')",
+    )
+):
     """
     **Parse a free-form address** into its components using libpostal.
     \n
     - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
     """
     try:
-        parsed = libpostal_parse_address(address)
-        parsed_dict = {component[1]: component[0] for component in parsed}
-        response = {
-            "address": address,
-            "parsed": parsed_dict
-        }
+        response = libpostal_parse_address(address)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/v1/address/expand/libpostal")
-async def expand_address_libpostal(address: str):
+@app.get("/api/v1/address/expand/libpostal",
+         response_model=ExpandAddressResponse,
+         tags=["Address"])
+async def expand_address(address: str = Query(...,
+                                              description="Free-form address string (e.g. '1 Microsoft Way, Redmond, WA 98052')")):
     """
     Parse a free-form address into its components using libpostal
 
@@ -68,11 +76,7 @@ async def expand_address_libpostal(address: str):
     - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
     """
     try:
-        result = libpostal_expand_address(address)
-        response = {
-            "address": address,
-            "expanded_address": result
-        }
+        response = libpostal_expand_address(address)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -169,8 +173,7 @@ async def sanitize_address(payload: AddressRequest):
 
         # Execute geocoding
         address_results = strategy.geocode(
-            address=sanitized_address,
-            country_code=payload.country_code
+            address=sanitized_address, country_code=payload.country_code
         )
 
         # Build metadata

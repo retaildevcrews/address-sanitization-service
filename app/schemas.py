@@ -20,7 +20,14 @@ class Address(BaseModel):
         description="Free-form address string to geocode",
     )
 
-VALID_STRATEGIES = ["azure_search", "azure_geocode", "mapbox", "loqate", "osm_nominatim"]
+
+VALID_STRATEGIES = [
+    "azure_search",
+    "azure_geocode",
+    "mapbox",
+    "loqate",
+    "osm_nominatim",
+]
 
 
 # ========================
@@ -33,6 +40,7 @@ class AddressRequest(BaseModel):
     the geocoding strategy to use, and a flag to indicate whether
     libpostal should be used for address expansion.
     """
+
     address: str = Field(
         ...,
         example="1 Microsoft Way, Redmond, WA 98052",
@@ -48,19 +56,19 @@ class AddressRequest(BaseModel):
     strategy: str = Field(
         default="azure_search",
         example="azure_search",
-        description=f"Geocoding service provider to use. Options: {', '.join(VALID_STRATEGIES)}",
-        description=f"Geocoding provider to use. Options: {', '.join(VALID_STRATEGIES)}"
+        description=f"Geocoding provider to use. Options: {', '.join(VALID_STRATEGIES)}",
     )
     use_libpostal: bool = Field(
         default=True,
         example=True,
-        description="Whether to sanitize/expand the address using libpostal"
+        description="Whether to sanitize/expand the address using libpostal",
     )
 
     class Config:
         """
         Pydantic model configuration for AddressRequest.
         """
+
         json_schema_extra = {
             "example": {
                 "address": "1 Microsoft Way, Redmond, WA 98052",
@@ -71,7 +79,6 @@ class AddressRequest(BaseModel):
         }
 
 
-
 # ========================
 # Component Schemas
 # ========================
@@ -79,6 +86,7 @@ class Coordinates(BaseModel):
     """
     Represents latitude and longitude in decimal degrees (WGS 84).
     """
+
     lat: float = Field(
         ..., example=47.641673, description="Latitude in decimal degrees (WGS 84)"
     )
@@ -87,18 +95,18 @@ class Coordinates(BaseModel):
     )
 
 
-
 class AddressPayload(BaseModel):
     """
     Represents the structured address components.
     """
+
     streetNumber: str = Field(
         ..., example="1", description="Numeric portion of street address"
     )
     streetName: str = Field(
         ...,
         example="Northeast One Microsoft Way",
-        description="Official street name (including any direction)"
+        description="Official street name (including any direction)",
     )
     municipality: str = Field(
         ..., example="Redmond", description="Primary municipal jurisdiction (city/town)"
@@ -117,9 +125,7 @@ class AddressPayload(BaseModel):
         max_length=3,
         example="US",
         description="ISO country code (2 or 3 character format)",
-        description="ISO country code (2- or 3-character format)"
     )
-
 
 
 class AddressResult(BaseModel):
@@ -127,6 +133,7 @@ class AddressResult(BaseModel):
     Represents one geocoding match, including a confidence score,
     structured address data, and coordinates.
     """
+
     confidenceScore: float = Field(
         ...,
         ge=0,
@@ -138,7 +145,7 @@ class AddressResult(BaseModel):
     freeformAddress: str = Field(
         ...,
         example="1 Microsoft Way, Redmond, WA 98052",
-        description="Complete address formatted by the provider"
+        description="Complete address formatted by the provider",
     )
     coordinates: Coordinates = Field(
         ..., description="Geographic coordinates of the location"
@@ -150,26 +157,19 @@ class AddressResult(BaseModel):
     )
 
 
-
 class Metadata(BaseModel):
     """
     Provides additional context about the geocoding request and response.
     """
-    query: str = Field(
-        ...,
-        description="Original address query as received by the API"
-    )
-    country: str = Field(
-        ...,
-        description="Country code filter used in the search"
-    )
+
+    query: str = Field(..., description="Original address query as received by the API")
+    country: str = Field(..., description="Country code filter used in the search")
     timestamp: datetime = Field(
         ..., description="UTC timestamp of API response generation"
     )
     totalResults: int = Field(
         ..., ge=0, description="Total number of matching addresses found"
     )
-
 
 
 # ========================
@@ -180,10 +180,8 @@ class AddressResponse(BaseModel):
     Represents the response from the /api/v1/address endpoint,
     containing metadata and a list of possible address matches.
     """
-    metadata: Metadata = Field(
-        ...,
-        description="Summary information about the request"
-    )
+
+    metadata: Metadata = Field(..., description="Summary information about the request")
     addresses: List[AddressResult] = Field(
         ..., description="Ordered list of geocoding results (highest confidence first)"
     )
@@ -192,6 +190,7 @@ class AddressResponse(BaseModel):
         """
         Pydantic model configuration for AddressResponse.
         """
+
         json_schema_extra = {
             "example": {
                 "metadata": {
@@ -200,23 +199,22 @@ class AddressResponse(BaseModel):
                     "timestamp": "2025-01-29T00:37:23.869661",
                     "totalResults": 1,
                 },
-                "addresses": [{
-                    "confidenceScore": 0.9965,
-                    "address": {
-                        "streetNumber": "1",
-                        "streetName": "Northeast One Microsoft Way",
-                        "municipality": "Redmond",
-                        "municipalitySubdivision": "King County",
-                        "postalCode": "98052",
-                        "countryCode": "US"
-                    },
-                    "freeformAddress": "1 Microsoft Way, Redmond, WA 98052",
-                    "coordinates": {
-                        "lat": 47.641673,
-                        "lon": -122.125648
-                    },
-                    "serviceUsed": "azure_search"
-                }]
+                "addresses": [
+                    {
+                        "confidenceScore": 0.9965,
+                        "address": {
+                            "streetNumber": "1",
+                            "streetName": "Northeast One Microsoft Way",
+                            "municipality": "Redmond",
+                            "municipalitySubdivision": "King County",
+                            "postalCode": "98052",
+                            "countryCode": "US",
+                        },
+                        "freeformAddress": "1 Microsoft Way, Redmond, WA 98052",
+                        "coordinates": {"lat": 47.641673, "lon": -122.125648},
+                        "serviceUsed": "azure_search",
+                    }
+                ],
             }
         }
 
@@ -230,23 +228,21 @@ class ExpandAddressResponse(BaseModel):
     Contains the original address and the expanded version
     derived from libpostal.
     """
-    address: str = Field(
-        ...,
-        description="Original address string"
-    )
+
+    original_address: str = Field(..., description="Original address string")
     expanded_address: str = Field(
-        ...,
-        description="First expanded version of the address from libpostal"
+        ..., description="First expanded version of the address from libpostal"
     )
 
     class Config:
         """
         Pydantic model configuration for ExpandAddressResponse.
         """
+
         json_schema_extra = {
             "example": {
-                "address": "1 Microsoft Way, Redmond, WA 98052",
-                "expanded_address": "1 microsoft way redmond washington 98052"
+                "original_address": "1 Microsoft Way, Redmond, WA 98052",
+                "expanded_address": "1 microsoft way redmond washington 98052",
             }
         }
 
@@ -260,28 +256,27 @@ class ParseAddressResponse(BaseModel):
     Contains the original address plus a dictionary of
     key-value pairs representing parsed address components.
     """
-    address: str = Field(
+
+    original_address: str = Field(..., description="Original address string")
+    parsed_address: Dict[str, str] = Field(
         ...,
-        description="Original address string"
-    )
-    parsed: Dict[str, str] = Field(
-        ...,
-        description="Key-value pairs representing parsed address components (dynamic keys)"
+        description="Key-value pairs representing parsed address components (dynamic keys)",
     )
 
     class Config:
         """
         Pydantic model configuration for ParseAddressResponse.
         """
+
         json_schema_extra = {
             "example": {
-                "address": "1 Microsoft Way, Redmond, WA 98052",
-                "parsed": {
+                "original_address": "1 Microsoft Way, Redmond, WA 98052",
+                "parsed_address": {
                     "house_number": "1",
                     "road": "microsoft way",
                     "city": "redmond",
                     "state": "wa",
-                    "postcode": "98052"
-                }
+                    "postcode": "98052",
+                },
             }
         }
