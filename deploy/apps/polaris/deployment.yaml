@@ -53,3 +53,15 @@ spec:
             secretKeyRef:
               name: polaris-env
               key: AZURE_OPENAI_DEPLOYMENT
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
