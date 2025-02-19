@@ -1,0 +1,26 @@
+installCRDs: true
+
+serviceAccount:
+  create: true
+  name: external-secrets-sa
+
+# Azure Key Vault integration
+azure:
+  tenantId: 16b3c013-d300-468d-ac64-7eda0820b6d3
+  subscriptionId: f22d63d0-6093-4a8f-83f3-7598e8fb6eb3
+  useManagedIdentityExtension: true
+  resourceGroup: keyvault-group
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+
+webhook:
+  enabled: true
+
+certController:
+  enabled: false
+
+rbac:
+  create: true
