@@ -48,6 +48,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 @app.get("/", include_in_schema=False)
 def health_check():
     return {"status": "healthy", "version": app.version}

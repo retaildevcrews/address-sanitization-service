@@ -2,7 +2,7 @@ name: Build & Push Docker Image
 
 on:
   push:
-    branches: [ "joaquinr-ci" ]
+    branches: [ "main" ]
     paths:
       - 'app/**'  # Only trigger if something changed in the app/ folder
 
