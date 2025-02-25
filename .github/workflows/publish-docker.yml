@@ -1,0 +1,41 @@
+name: Build & Push Docker Image
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'app/**'  # Only trigger if something changed in the app/ folder
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_IO_USER }}
+          password: ${{ secrets.GHCR_IO_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        env:
+          # Less verbose build logs
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_PROGRESS: plain
+        with:
+          # Directory containing your Dockerfile (root of the repo)
+          context: .
+          # Automatically push once built
+          push: true
+          # Tag the image with "latest" and the commit SHA
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
