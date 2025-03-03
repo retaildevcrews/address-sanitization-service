@@ -141,6 +141,11 @@ class AddressResult(BaseModel):
         example=0.9965,
         description="Normalized confidence score (1 = highest certainty)",
     )
+    type: str = Field(
+        default="",
+        example="point",
+        description="Precision of address match (e.g., point, street, etc.)",
+    )
     address: AddressPayload = Field(..., description="Structured address components")
     freeformAddress: str = Field(
         ...,
