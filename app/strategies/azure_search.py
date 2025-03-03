@@ -8,11 +8,11 @@ from . import GeocodingStrategy, StrategyFactory
 from ..utilities import create_empty_address_result
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 @StrategyFactory.register("azure_search")
 class AzureMapsStrategy(GeocodingStrategy):
-
-    logger = logging.getLogger(__name__)
 
     # Configuration constants
     API_BASE_URL = "https://atlas.microsoft.com/search/address/json"
@@ -76,7 +76,7 @@ class AzureMapsStrategy(GeocodingStrategy):
 
     def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
         """Process and validate API response"""
-        logging.info(f"Processing Azure Maps response: {data}")
+        logger.info(f"Processing Azure Maps response: {data}")
         if not isinstance(data, dict) or "results" not in data:
             raise GeocodingError(
                 detail="Invalid Azure Maps API response format", status_code=500
@@ -96,7 +96,7 @@ class AzureMapsStrategy(GeocodingStrategy):
         """Convert Azure-specific response to standard format"""
         address_info = result.get("address", {})
         position = result.get("position", {})
-        logging.error(f"Parsing result: {result}")
+        logger.info(f"Parsing result: {result}")
         return AddressResult(
             confidenceScore=self._get_confidence_score(result),
             type=result.get("type", ""),
