@@ -1,4 +1,4 @@
-# app/strategies/google.py
+# app/strategies/google_geocode.py
 import os
 import requests
 from typing import List, Dict
