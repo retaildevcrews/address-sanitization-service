@@ -87,12 +87,18 @@ class GoogleMapsStrategy(GeocodingStrategy):
             raise GeocodingError(
                 detail="No results found in Google Maps response", status_code=404
             )
+
         return [
             self._parse_result(r, country_code)
             for r in sorted(
-                results, key=lambda x: self._calculate_confidence_score(x), reverse=True
+                results,
+                key=lambda x: self._calculate_confidence_score(
+                    x.get("geometry", {}).get("location_type", "")
+                ),
+                reverse=True,
             )
         ]
+
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Google-specific response to standard format"""
