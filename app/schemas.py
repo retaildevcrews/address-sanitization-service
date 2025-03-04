@@ -108,6 +108,11 @@ class AddressPayload(BaseModel):
         example="King County",
         description="Secondary municipal area (county/district)",
     )
+    neighborhood: str = Field(
+        default="",
+        example="Redmond Ridge",
+        description="Neighborhood or locality within the municipality",
+    )
     postalCode: str = Field(
         ..., example="98052", description="Postal code in local format"
     )
@@ -117,6 +122,16 @@ class AddressPayload(BaseModel):
         max_length=3,
         example="US",
         description="ISO country code (2 or 3 character format)",
+    )
+    countrySecondarySubdivision: str = Field(
+        default="",
+        example="Travis",
+        description="County or region within the country",
+    )
+    countryTertiarySubdivision: str = Field(
+        default="",
+        example="Texas",
+        description="Named Area",
     )
 
 

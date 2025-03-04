@@ -5,6 +5,9 @@ from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @StrategyFactory.register("google_geocode")
@@ -19,9 +22,10 @@ class GoogleGeocodeStrategy(GeocodingStrategy):
         "street_number": "streetNumber",
         "route": "streetName",
         "locality": "municipality",
-        "administrative_area_level_2": "municipalitySubdivision",
+        "administrative_area_level_2": "countrySecondarySubdivision",
         "postal_code": "postalCode",
         "country": "countryCode",
+        "neighborhood": "neighborhood",
     }
 
     def __init__(self):
@@ -101,6 +105,7 @@ class GoogleGeocodeStrategy(GeocodingStrategy):
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Google-specific response to standard format"""
+        logger.debug("Google Geocode result: %s", result)
         components = self._extract_components(result)
         geometry = result.get("geometry", {})
         location = geometry.get("location", {})
@@ -110,8 +115,11 @@ class GoogleGeocodeStrategy(GeocodingStrategy):
             streetName=components.get("streetName", ""),
             municipality=components.get("municipality", ""),
             municipalitySubdivision=components.get("municipalitySubdivision", ""),
+            neighborhood=components.get("neighborhood", ""),
             postalCode=components.get("postalCode", ""),
             countryCode=components.get("countryCode", country_code.upper()),
+            countrySecondarySubdivision=components.get("countrySecondarySubdivision", ""),
+            countryTertiarySubdivision=components.get("countryTertiarySubdivision", ""),
         )
         address_result = AddressResult(
             address=address,
@@ -128,6 +136,7 @@ class GoogleGeocodeStrategy(GeocodingStrategy):
     def _extract_components(self, result: Dict) -> Dict:
         """Map Google address components to our schema"""
         components = {}
+        logger.debug("Google Geocode components: %s", result)
         for component in result.get("address_components", []):
             for type in component["types"]:
                 if type in self.COMPONENT_MAP:
@@ -151,19 +160,27 @@ class GoogleGeocodeStrategy(GeocodingStrategy):
             "APPROXIMATE": 0.5,
         }
         address_type_score = score_map.get(location_type, 0.5)
-        component_count = sum(
-            1
-            for component in [
-                address.streetNumber,
-                address.streetName,
-                address.municipality,
-                address.municipalitySubdivision,
-                address.postalCode,
-                address.countryCode,
-            ]
-            if component
+        address_components = []
+        address_components.append(address.streetNumber)
+        address_components.append(address.streetName)
+        address_components.append(address.municipality)
+        address_components.append(address.municipalitySubdivision)
+        address_components.append(address.countrySecondarySubdivision)
+        address_components.append(address.postalCode)
+        address_components.append(address.countryCode)
+        address_components.append(address.neighborhood)
+        # Count the number of non-empty components
+        # and calculate the score as a fraction of the total components
+        populated_component_count = sum(
+            1 for component in address_components if component
         )
-        address_components_score = component_count / 6.0
-        # Combine the scores
+        # Calculate the score based on the number of components
+        number_of_components = len(address_components)
+        if populated_component_count == 0 or number_of_components == 0:
+            address_components_score = 0.0
+        else:
+            address_components_score = populated_component_count / number_of_components
+        # Combine the scores use address type score as a weight
+        # to the address components score
         combined_score = address_type_score * address_components_score
         return combined_score
