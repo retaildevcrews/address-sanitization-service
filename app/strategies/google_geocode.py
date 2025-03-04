@@ -88,16 +88,18 @@ class GoogleMapsStrategy(GeocodingStrategy):
                 detail="No results found in Google Maps response", status_code=404
             )
 
-        return [
-            self._parse_result(r, country_code)
-            for r in sorted(
-                results,
-                key=lambda x: self._calculate_confidence_score(
-                    x.get("geometry", {}).get("location_type", "")
-                ),
-                reverse=True,
-            )
+        parsed_results = [
+            self._parse_result(r, country_code) for r in results
         ]
+        # Sort results by confidence score
+        # and return the top N results
+        if len(parsed_results) > self.MAX_RESULTS:
+            parsed_results = sorted(
+                parsed_results,
+                key=lambda x: x.confidenceScore,
+                reverse=True,
+            )[: self.MAX_RESULTS]
+        return parsed_results
 
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
