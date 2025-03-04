@@ -143,6 +143,13 @@ class GoogleMapsStrategy(GeocodingStrategy):
         # Calculate similarity score based on presence of each attribute in the original address
         similarity_score = sum(1 for attr in attributes if attr.lower() in original_address) / len(attributes)
 
+        # Apply weights to completeness and similarity scores
+        weighted_completeness_score = completeness_score * 0.25
+        weighted_similarity_score = similarity_score * 0.75
+
+        # Final confidence score is a weighted average of completeness and similarity scores
+        confidence_score = weighted_completeness_score + weighted_similarity_score
+
         # Final confidence score is an average of completeness and similarity scores
         confidence_score = (completeness_score + similarity_score) / 2
 
