@@ -89,7 +89,7 @@ class AzureMapsStrategy(GeocodingStrategy):
             return create_empty_address_result(country_code, "azure_search")
 
         return [
-            # default sort order is sufficiently good becuse it takes into account
+            # default sort order is sufficiently good because it takes into account
             # the type of result in addition to score
             self._parse_result(r, country_code)
             for r in results[: self.MAX_RESULTS]
