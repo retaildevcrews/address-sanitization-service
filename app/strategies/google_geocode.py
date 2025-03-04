@@ -101,7 +101,7 @@ class GoogleMapsStrategy(GeocodingStrategy):
         location = geometry.get("location", {})
         location_type = result.get("geometry", {}).get("location_type", "")
         return AddressResult(
-            confidenceScore=self._calculate_confidence_score(result),
+            confidenceScore=self._calculate_confidence_score(location_type),
             address=AddressPayload(
                 streetNumber=components.get("streetNumber", ""),
                 streetName=components.get("streetName", ""),
@@ -128,9 +128,8 @@ class GoogleMapsStrategy(GeocodingStrategy):
                     components[field] = component["short_name"]
         return components
 
-    def _calculate_confidence_score(self, result: Dict) -> float:
+    def _calculate_confidence_score(self, location_type: str) -> float:
         """Convert Google location_type to confidence score (0-1)"""
-        location_type = result.get("geometry", {}).get("location_type", "")
         score_map = {
             "ROOFTOP": 0.9,
             "RANGE_INTERPOLATED": 0.7,
