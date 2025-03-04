@@ -1,14 +1,10 @@
-# app/strategies/Google.py
+# app/strategies/google.py
 import os
 import requests
 from typing import List, Dict
 from ..schemas import AddressResult, AddressPayload, Coordinates
 from ..exceptions import GeocodingError
 from . import GeocodingStrategy, StrategyFactory
-from ..utilities import create_empty_address_result
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 @StrategyFactory.register("google_geocode")
@@ -17,18 +13,27 @@ class GoogleMapsStrategy(GeocodingStrategy):
     API_BASE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
     TIMEOUT = 5  # seconds
     MAX_RESULTS = 10
-    REQUIRED_ENV_VARS = ["GOOGLE_API_KEY"]
+    REQUIRED_ENV_VARS = ["GOOGLE_MAPS_API_KEY"]
+    # Map Google address components to our schema
+    COMPONENT_MAP = {
+        "street_number": "streetNumber",
+        "route": "streetName",
+        "locality": "municipality",
+        "administrative_area_level_2": "municipalitySubdivision",
+        "postal_code": "postalCode",
+        "country": "countryCode",
+    }
 
     def __init__(self):
         self._validate_environment()
-        self.api_key = os.getenv("GOOGLE_API_KEY")
+        self.api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
     def _validate_environment(self):
         """Ensure required environment variables are present"""
         missing = [var for var in self.REQUIRED_ENV_VARS if not os.getenv(var)]
         if missing:
             raise ValueError(
-                f"Missing google api key environment variables: {', '.join(missing)}"
+                f"Missing Google Maps environment variables: {', '.join(missing)}"
             )
 
     def geocode(self, address: str, country_code: str) -> List[AddressResult]:
@@ -39,18 +44,23 @@ class GoogleMapsStrategy(GeocodingStrategy):
         except GeocodingError:
             raise
         except Exception as e:
-            raise GeocodingError(detail=f"Unexpected error: {str(e)}", status_code=500)
+            raise GeocodingError(
+                detail=f"Unexpected Google Maps error: {str(e)}", status_code=500
+            )
 
     def _make_api_call(self, address: str, country_code: str) -> Dict:
         """Handle API communication"""
-
-        params = {"key": self.api_key, "address": address}
-
+        params = {
+            "address": address,
+            "components": f"country:{country_code}",
+            "key": self.api_key,
+            "language": "en",
+            "region": country_code.lower(),
+        }
         try:
             response = requests.get(
                 self.API_BASE_URL, params=params, timeout=self.TIMEOUT
             )
-
             response.raise_for_status()
             return response.json()
         except requests.exceptions.Timeout:
@@ -68,97 +78,63 @@ class GoogleMapsStrategy(GeocodingStrategy):
 
     def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
         """Process and validate API response"""
-        logger.error(f"Processing Google Maps response: {data}")
         if not isinstance(data, dict) or "results" not in data:
             raise GeocodingError(
                 detail="Invalid Google Maps API response format", status_code=500
             )
-
         results = data.get("results", [])
-
-        # If no results found, return a "fallback" AddressResult instead of raising 404
         if not results:
-            return create_empty_address_result(country_code, "Google")
+            raise GeocodingError(
+                detail="No results found in Google Maps response", status_code=404
+            )
         return [
             self._parse_result(r, country_code)
             for r in sorted(
-                results, key=lambda x: x.get("relevance", 0.0), reverse=True
+                results, key=lambda x: self._calculate_confidence_score(x), reverse=True
             )
         ]
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Google-specific response to standard format"""
-        address_components = result.get("address_components", [])
-        formatted_address = result.get("formatted_address", "")
-        coordinates = result.get("geometry", {}).get("location", {})
-        lat = coordinates.get("lat", 0.0)
-        lon = coordinates.get("lng", 0.0)
-        street_number = ""
-        street_name = ""
-        postal_code = ""
-        municipality = ""
-        country_code = ""
-        municipality_subdivision = ""
-        types = result.get("types", [])
-        types = result.get("types", [])
-        type = ", ".join(types)
-        for component in address_components:
-            types = component.get("types", [])
-            if "street_number" in types:
-                street_number = component.get("long_name", "")
-            elif "route" in types:
-                street_name = component.get("long_name", "")
-            elif "locality" in types:
-                municipality = component.get("long_name", "")
-            elif "country" in types:
-                country_code = component.get("short_name", "")
-            elif "postal_code" in types:
-                postal_code = component.get("long_name", "")
-            elif "administrative_area_level_2" in types:
-                municipality_subdivision = component.get("long_name", "")
-
-        address_obj = AddressPayload(
-            streetNumber=street_number,
-            streetName=street_name,
-            postalCode=postal_code,
-            municipality=municipality,
-            countryCode=country_code,
-            municipalitySubdivision=municipality_subdivision,
-        )
-        # Calculate confidence score based on completeness of the address
-        attributes = [
-            street_number,
-            street_name,
-            postal_code,
-            municipality,
-            country_code,
-            municipality_subdivision,
-        ]
-        # Since google geocode api does not provide a confidence score, we will calculate it based on the completeness of the address as well
-        # as the similarity of the address to the original address
-        # Calculate completeness score based on presence of each attribute
-        completeness_score = sum(1 for attr in attributes if attr) / len(attributes)
-        # Compare concatenated address object attributes with the original address
-        original_address = formatted_address.lower()
-        # Calculate similarity score based on presence of each attribute in the original address
-        similarity_score = sum(1 for attr in attributes if attr.lower() in original_address) / len(attributes)
-
-        # Apply weights to completeness and similarity scores
-        weighted_completeness_score = completeness_score * 0.25
-        weighted_similarity_score = similarity_score * 0.75
-
-        # Final confidence score is a weighted average of completeness and similarity scores
-        confidence_score = weighted_completeness_score + weighted_similarity_score
-
-        # Final confidence score is an average of completeness and similarity scores
-        confidence_score = (completeness_score + similarity_score) / 2
-
-        address_result = AddressResult(
-            confidenceScore=confidence_score,
-            type=type,
-            address=address_obj,
-            freeformAddress=formatted_address,
-            coordinates=Coordinates(lat=lat, lon=lon),
+        components = self._extract_components(result)
+        geometry = result.get("geometry", {})
+        location = geometry.get("location", {})
+        location_type = result.get("geometry", {}).get("location_type", "")
+        return AddressResult(
+            confidenceScore=self._calculate_confidence_score(result),
+            address=AddressPayload(
+                streetNumber=components.get("streetNumber", ""),
+                streetName=components.get("streetName", ""),
+                municipality=components.get("municipality", ""),
+                municipalitySubdivision=components.get("municipalitySubdivision", ""),
+                postalCode=components.get("postalCode", ""),
+                countryCode=components.get("countryCode", country_code.upper()),
+            ),
+            freeformAddress=result.get("formatted_address", ""),
+            type=location_type,
+            coordinates=Coordinates(
+                lat=location.get("lat", 0.0), lon=location.get("lng", 0.0)
+            ),
             serviceUsed="google_geocode",
         )
-        return address_result
+
+    def _extract_components(self, result: Dict) -> Dict:
+        """Map Google address components to our schema"""
+        components = {}
+        for component in result.get("address_components", []):
+            for type in component["types"]:
+                if type in self.COMPONENT_MAP:
+                    field = self.COMPONENT_MAP[type]
+                    components[field] = component["short_name"]
+        return components
+
+    def _calculate_confidence_score(self, result: Dict) -> float:
+        """Convert Google location_type to confidence score (0-1)"""
+        location_type = result.get("geometry", {}).get("location_type", "")
+        score_map = {
+            "ROOFTOP": 0.9,
+            "RANGE_INTERPOLATED": 0.7,
+            "GEOMETRIC_CENTER": 0.6,
+            "APPROXIMATE": 0.5,
+        }
+        return score_map.get(location_type, 0.5)
