@@ -8,7 +8,7 @@ from . import GeocodingStrategy, StrategyFactory
 
 
 @StrategyFactory.register("google_geocode")
-class GoogleMapsStrategy(GeocodingStrategy):
+class GoogleGeocodeStrategy(GeocodingStrategy):
     # Configuration constants
     API_BASE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
     TIMEOUT = 5  # seconds
