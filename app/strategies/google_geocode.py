@@ -93,11 +93,6 @@ class GoogleMapsStrategy(GeocodingStrategy):
         coordinates = result.get("geometry", {}).get("location", {})
         lat = coordinates.get("lat", 0.0)
         lon = coordinates.get("lng", 0.0)
-        if not lat or not lon:
-            raise GeocodingError(
-                detail="Missing coordinates in Google Maps API response",
-                status_code=500,
-            )
         street_number = ""
         street_name = ""
         postal_code = ""
@@ -130,13 +125,33 @@ class GoogleMapsStrategy(GeocodingStrategy):
             countryCode=country_code,
             municipalitySubdivision=municipality_subdivision,
         )
+        # Calculate confidence score based on completeness of the address
+        attributes = [
+            street_number,
+            street_name,
+            postal_code,
+            municipality,
+            country_code,
+            municipality_subdivision,
+        ]
+        # Since google geocode api does not provide a confidence score, we will calculate it based on the completeness of the address as well
+        # as the similarity of the address to the original address
+        # Calculate completeness score based on presence of each attribute
+        completeness_score = sum(1 for attr in attributes if attr) / len(attributes)
+        # Compare concatenated address object attributes with the original address
+        original_address = formatted_address.lower()
+        # Calculate similarity score based on presence of each attribute in the original address
+        similarity_score = sum(1 for attr in attributes if attr.lower() in original_address) / len(attributes)
+
+        # Final confidence score is an average of completeness and similarity scores
+        confidence_score = (completeness_score + similarity_score) / 2
+
         address_result = AddressResult(
-            confidenceScore=0.0,
+            confidenceScore=confidence_score,
             type=type,
             address=address_obj,
             freeformAddress=formatted_address,
             coordinates=Coordinates(lat=lat, lon=lon),
             serviceUsed="google_geocode",
         )
-
         return address_result
