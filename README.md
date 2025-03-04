@@ -33,9 +33,17 @@ This repository contains a FastAPI application that sanitizes addresses using se
 
 ```bash
 cat > credentials.env <<EOF
-AZURE_MAPS_KEY=your_actual_key_here
-MAPBOX_MAPS_KEY=your_actual_key_here
-LOQATE_API_KEY=your_actual_key_here
+# Azure openai settings
+AZURE_OPENAI_API_VERSION="API_VERSION"
+AZURE_OPENAI_ENDPOINT="https://-yourdeployment-.openai.azure.com/"
+AZURE_OPENAI_API_KEY="YOUR_AZURE_OPENAI_API_KEY"
+AZURE_OPENAI_DEPLOYMENT="YOUR_MODEL_NAME"
+# Azure maps settings
+AZURE_MAPS_KEY="YOUR_AZURE_MAPS_KEY"
+# Mapbox key
+MAPBOX_MAPS_KEY="YOUR_MAPBOX_KEY"
+# Google API key
+GOOGLE_MAPS_API_KEY="YOUR_GOOGLE_KEY"
 EOF
 ```
 
@@ -96,12 +104,13 @@ You can specify one or more strategies. Available options:
 - `osm_nominatim` (Nominatim / OpenStreetMap)
 - `mapbox` (MapBox API)
 - `loqate` (Loqate API)
+- `google_geocode` (Google Maps Geocode API)
 
 If no strategy is provided, the script will exit with an error.
 
 ### What Happens?
 
-- The script reads addresses from `peru.csv`.
+- The script reads addresses from `addresses.csv`.
 - It tests each address using the specified geocoding strategies.
 - The results are saved to `results.csv` in the same folder.
 - If an error occurs (e.g., API failure), execution stops, and an error message is logged.

@@ -1,4 +1,5 @@
 # app/main.py
+import logging
 from contextlib import asynccontextmanager
 
 from datetime import datetime
@@ -24,6 +25,8 @@ from typing import List
 
 llm_extractor = None
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,7 +34,7 @@ async def lifespan(app: FastAPI):
     try:
         llm_extractor = LLMEntityExtraction()
     except Exception as e:
-        print(f"Failed to initialize LLMEntityExtraction: {e}")
+        logger.error(f"Failed to initialize LLMEntityExtraction: {e}")
     yield
 
 
@@ -187,22 +190,22 @@ async def sanitize_address(payload: AddressRequest):
             # only provide the expanded_address to the strategy
             expanded_address_dict = libpostal_expand_address(payload.address)
             if "expanded_address" in expanded_address_dict:
-                sanitized_address = expanded_address_dict["expanded_address"]
-                print("Sanitized Address (libpostal):", sanitized_address)
+                expanded_address = expanded_address_dict["expanded_address"]
+                logger.info(f"Expanded Address (libpostal): {expanded_address}")
             else:
                 raise HTTPException(
                     status_code=500,
                     detail="Expanded address not found in the response from libpostal",
                 )
         else:
-            sanitized_address = payload.address
+            expanded_address = payload.address
 
         # Get the requested strategy
         strategy = StrategyFactory.get_strategy(payload.strategy)
 
         # Execute geocoding
         address_results = strategy.geocode(
-            address=sanitized_address, country_code=payload.country_code
+            address=expanded_address, country_code=payload.country_code
         )
 
         # Build metadata

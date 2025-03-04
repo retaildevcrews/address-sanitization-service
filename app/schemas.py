@@ -10,6 +10,7 @@ VALID_STRATEGIES = [
     "mapbox",
     "loqate",
     "osm_nominatim",
+    "google_geocode",
 ]
 
 
@@ -19,15 +20,6 @@ class Address(BaseModel):
         example="1 Microsoft Way, Redmond, WA 98052",
         description="Free-form address string to geocode",
     )
-
-
-VALID_STRATEGIES = [
-    "azure_search",
-    "azure_geocode",
-    "mapbox",
-    "loqate",
-    "osm_nominatim",
-]
 
 
 # ========================
@@ -140,6 +132,11 @@ class AddressResult(BaseModel):
         le=1,
         example=0.9965,
         description="Normalized confidence score (1 = highest certainty)",
+    )
+    type: str = Field(
+        default="",
+        example="point",
+        description="Precision of address match (e.g., point, street, etc.)",
     )
     address: AddressPayload = Field(..., description="Structured address components")
     freeformAddress: str = Field(
