@@ -88,9 +88,7 @@ class GoogleMapsStrategy(GeocodingStrategy):
                 detail="No results found in Google Maps response", status_code=404
             )
 
-        parsed_results = [
-            self._parse_result(r, country_code) for r in results
-        ]
+        parsed_results = [self._parse_result(r, country_code) for r in results]
         # Sort results by confidence score
         # and return the top N results
         if len(parsed_results) > self.MAX_RESULTS:
@@ -101,23 +99,23 @@ class GoogleMapsStrategy(GeocodingStrategy):
             )[: self.MAX_RESULTS]
         return parsed_results
 
-
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:
         """Convert Google-specific response to standard format"""
         components = self._extract_components(result)
         geometry = result.get("geometry", {})
         location = geometry.get("location", {})
         location_type = result.get("geometry", {}).get("location_type", "")
-        return AddressResult(
-            confidenceScore=self._calculate_confidence_score(location_type),
-            address=AddressPayload(
-                streetNumber=components.get("streetNumber", ""),
-                streetName=components.get("streetName", ""),
-                municipality=components.get("municipality", ""),
-                municipalitySubdivision=components.get("municipalitySubdivision", ""),
-                postalCode=components.get("postalCode", ""),
-                countryCode=components.get("countryCode", country_code.upper()),
-            ),
+        address = AddressPayload(
+            streetNumber=components.get("streetNumber", ""),
+            streetName=components.get("streetName", ""),
+            municipality=components.get("municipality", ""),
+            municipalitySubdivision=components.get("municipalitySubdivision", ""),
+            postalCode=components.get("postalCode", ""),
+            countryCode=components.get("countryCode", country_code.upper()),
+        )
+        address_result = AddressResult(
+            address=address,
+            confidenceScore=self._calculate_confidence_score(address, location_type),
             freeformAddress=result.get("formatted_address", ""),
             type=location_type,
             coordinates=Coordinates(
@@ -125,6 +123,7 @@ class GoogleMapsStrategy(GeocodingStrategy):
             ),
             serviceUsed="google_geocode",
         )
+        return address_result
 
     def _extract_components(self, result: Dict) -> Dict:
         """Map Google address components to our schema"""
@@ -136,12 +135,35 @@ class GoogleMapsStrategy(GeocodingStrategy):
                     components[field] = component["short_name"]
         return components
 
-    def _calculate_confidence_score(self, location_type: str) -> float:
-        """Convert Google location_type to confidence score (0-1)"""
+    def _calculate_confidence_score(
+        self, address: AddressPayload, location_type: str
+    ) -> float:
+        """
+        Calculate confidence score based on address components and location type.
+        The score is a combination of the address type and the number of components
+        present in the address. Rooftop addresses are considered the most reliable,
+        while approximate addresses are less reliable.
+        """
         score_map = {
-            "ROOFTOP": 0.9,
-            "RANGE_INTERPOLATED": 0.7,
-            "GEOMETRIC_CENTER": 0.6,
+            "ROOFTOP": 1.0,
+            "RANGE_INTERPOLATED": 0.9,
+            "GEOMETRIC_CENTER": 0.75,
             "APPROXIMATE": 0.5,
         }
-        return score_map.get(location_type, 0.5)
+        address_type_score = score_map.get(location_type, 0.5)
+        component_count = sum(
+            1
+            for component in [
+                address.streetNumber,
+                address.streetName,
+                address.municipality,
+                address.municipalitySubdivision,
+                address.postalCode,
+                address.countryCode,
+            ]
+            if component
+        )
+        address_components_score = component_count / 6.0
+        # Combine the scores
+        combined_score = address_type_score * address_components_score
+        return combined_score
