@@ -191,7 +191,7 @@ async def sanitize_address(payload: AddressRequest):
             expanded_address_dict = libpostal_expand_address(payload.address)
             if "expanded_address" in expanded_address_dict:
                 expanded_address = expanded_address_dict["expanded_address"]
-                logger.info("Expanded Address (libpostal):", expanded_address)
+                logger.info(f"Expanded Address (libpostal): {expanded_address}")
             else:
                 raise HTTPException(
                     status_code=500,
