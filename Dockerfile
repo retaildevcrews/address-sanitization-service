@@ -16,10 +16,17 @@
 
     WORKDIR /opt/libpostal
 
+    # Declare the build argument
+    ARG TARGETARCH
+
     # Clone and build libpostal
     RUN git clone https://github.com/openvenues/libpostal.git . && \
         ./bootstrap.sh && \
-        ./configure --prefix=/usr/local && \
+        if [ "$TARGETARCH" = "arm64" ]; then \
+            ./configure --prefix=/usr/local --disable-sse2; \
+        else \
+            ./configure --prefix=/usr/local; \
+        fi && \
         make && \
         make install && \
         ldconfig
