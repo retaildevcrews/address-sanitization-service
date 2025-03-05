@@ -39,7 +39,7 @@ def parse_args():
     )
     parser.add_argument(
         "--api-url",
-        default="http://localhost:8000/api/v1/address",
+        default="http://localhost:8000/api/v1/address/sanitize",
         help="API endpoint for geocoding.",
     )
     return parser.parse_args()
