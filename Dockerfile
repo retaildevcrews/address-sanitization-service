@@ -22,7 +22,6 @@
     # Clone and build libpostal
     RUN git clone https://github.com/openvenues/libpostal.git . && \
         ./bootstrap.sh && \
-        # ./configure --prefix=/usr/local --disable-sse2 && \
         if [ "$TARGETARCH" = "arm64" ]; then \
             ./configure --prefix=/usr/local --disable-sse2; \
         else \
