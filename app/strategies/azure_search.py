@@ -18,7 +18,6 @@ class AzureMapsStrategy(GeocodingStrategy):
     API_BASE_URL = "https://atlas.microsoft.com/search/address/json"
     API_VERSION = "1.0"
     TIMEOUT = 5  # seconds
-    MAX_RESULTS = 10
     REQUIRED_ENV_VARS = ["AZURE_MAPS_KEY"]
 
     def __init__(self):
@@ -33,11 +32,11 @@ class AzureMapsStrategy(GeocodingStrategy):
                 f"Missing Azure Maps environment variables: {', '.join(missing)}"
             )
 
-    def geocode(self, address: str, country_code: str) -> List[AddressResult]:
+    def geocode(self, address: str, country_code: str, max_results: int) -> List[AddressResult]:
         """Main geocoding interface implementation"""
         try:
-            response = self._make_api_call(address, country_code)
-            return self._process_response(response, country_code)
+            response = self._make_api_call(address, country_code, max_results)
+            return self._process_response(response, country_code, max_results)
         except GeocodingError:
             raise
         except Exception as e:
@@ -45,14 +44,14 @@ class AzureMapsStrategy(GeocodingStrategy):
                 detail=f"Unexpected Azure Maps error: {str(e)}", status_code=500
             )
 
-    def _make_api_call(self, address: str, country_code: str) -> Dict:
+    def _make_api_call(self, address: str, country_code: str, max_results: int) -> Dict:
         """Handle API communication"""
         params = {
             "api-version": self.API_VERSION,
             "subscription-key": self.api_key,
             "query": address,
             "countrySet": country_code,
-            "limit": self.MAX_RESULTS,
+            "limit": max_results
         }
 
         try:
@@ -74,7 +73,7 @@ class AzureMapsStrategy(GeocodingStrategy):
                 detail=f"Azure Maps connection error: {str(e)}", status_code=503
             )
 
-    def _process_response(self, data: Dict, country_code: str) -> List[AddressResult]:
+    def _process_response(self, data: Dict, country_code: str, max_results: int) -> List[AddressResult]:
         """Process and validate API response"""
         logger.info(f"Processing Azure Maps response: {data}")
         if not isinstance(data, dict) or "results" not in data:
@@ -92,7 +91,7 @@ class AzureMapsStrategy(GeocodingStrategy):
             # default sort order is sufficiently good because it takes into account
             # the type of result in addition to score
             self._parse_result(r, country_code)
-            for r in results[: self.MAX_RESULTS]
+            for r in results[: max_results]
         ]
 
     def _parse_result(self, result: Dict, country_code: str) -> AddressResult:

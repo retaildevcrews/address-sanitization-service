@@ -45,6 +45,13 @@ class AddressRequest(BaseModel):
         example="US",
         description="ISO 3166-1 alpha-2 country code",
     )
+    max_results: int = Field(
+        default=10,
+        ge=1,
+        le=10,
+        example=1,
+        description="Maximum number of results to return (default: 1, max: 10)",
+    )
     strategy: str = Field(
         default="azure_search",
         example="azure_search",

@@ -85,7 +85,6 @@ class LLMEntityExtraction:
             If the address contain 'Sin Número', 'S/N', or similar, the corresponding value should be null.
             """
 
-    # not used in the workflow - just for quick testing
     def expand_address(self, address: str) -> dict:
         return call_model(
             client=self.client,
@@ -95,7 +94,6 @@ class LLMEntityExtraction:
             response_format=self.response_format_expansion,
         )
 
-    # not used in the workflow - just for quick testing
     def parse_address(self, address: str) -> dict:
         return call_model(
             client=self.client,
