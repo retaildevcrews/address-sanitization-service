@@ -22,6 +22,18 @@ class BatchExecutor:
                 result = future.result()
                 results.append(result)
         return results
+    
+    def execute_ordered(self, inputs: List[Any]) -> List[Any]:
+        results = [None] * len(inputs)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+            future_to_index = {
+                executor.submit(self._delayed_execution, inp): idx
+                for idx, inp in enumerate(inputs)
+            }
+            for future in concurrent.futures.as_completed(future_to_index):
+                idx = future_to_index[future]
+                results[idx] = future.result()
+        return results
 
     def _delayed_execution(self, inp: Any) -> Any:
         time.sleep(self.delay)

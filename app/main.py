@@ -139,6 +139,26 @@ async def parse_address_llm(address: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/v1/address/parse/llm/batch", tags=["Address"])
+async def expand_address_llm_batch(addresses: List[Address]):
+    """
+    Parse addresses passed in as an array of addresses
+
+
+    Parameters:
+    - **addresses**: List of address objects
+    """
+    try:
+        address_strings = [address.freeformAddress for address in addresses]
+        executor = batch_executor.BatchExecutor(
+            func=llm_extractor.parse_address, num_threads=5, delay=0.5
+        )
+        results = executor.execute_ordered(address_strings)
+        return {"parsed_addresses": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/v1/address/expand/llm", tags=["Address"])
 async def expand_address_llm(address: str):
     """
@@ -167,7 +187,7 @@ async def expand_address_llm_batch(addresses: List[Address]):
         executor = batch_executor.BatchExecutor(
             func=llm_extractor.expand_address, num_threads=5, delay=0.5
         )
-        results = executor.execute(address_strings)
+        results = executor.execute_ordered(address_strings)
         return {"expanded_addresses": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -180,6 +200,7 @@ async def sanitize_address(payload: AddressRequest):
     \n
     - **address**: Free-form address string (e.g., "1 Microsoft Way, Redmond, WA 98052")
     - **country_code**: ISO 3166-1 alpha-2 country code (e.g., "US")
+    - **max_results**: Maximum number of results to return (default: 10)
     - **strategy**: Geocoding provider to use (azure_search, mapbox, etc.)
     - **use_libpostal**: Whether to sanitize the address using libpostal (default: True)
     """
@@ -205,7 +226,9 @@ async def sanitize_address(payload: AddressRequest):
 
         # Execute geocoding
         address_results = strategy.geocode(
-            address=expanded_address, country_code=payload.country_code
+            address=expanded_address,
+            country_code=payload.country_code,
+            max_results=payload.max_results
         )
 
         # Build metadata
