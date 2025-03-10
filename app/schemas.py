@@ -130,6 +130,16 @@ class AddressPayload(BaseModel):
         example="US",
         description="ISO country code (2 or 3 character format)",
     )
+    country: str = Field(
+        default="",
+        example="United States",
+        description="Full name of the country",
+    )
+    countrySubdivision: str = Field(
+        default="",
+        example="WA",
+        description="State or province within the country",
+    )
     countrySecondarySubdivision: str = Field(
         default="",
         example="Travis",
