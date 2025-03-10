@@ -1,5 +1,6 @@
 import json
 import time
+import logging
 from os.path import dirname
 from os.path import abspath
 from os.path import dirname
@@ -27,7 +28,8 @@ def generate_response_format(file_name, file_path=None):
     }
 
 class LLMEntityExtraction:
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
         AZURE_OPENAI_API_KEY = getenv("AZURE_OPENAI_API_KEY")
         AZURE_OPENAI_API_VERSION = getenv("AZURE_OPENAI_API_VERSION")
         AZURE_OPENAI_ENDPOINT = getenv("AZURE_OPENAI_ENDPOINT")
@@ -45,9 +47,8 @@ class LLMEntityExtraction:
                 raise ValueError(f"The environment variable '{var_name}' is not set or is empty.")
 
 
-        print("AZURE_OPENAI_API_VERSION", AZURE_OPENAI_API_VERSION)
-        print("AZURE_OPENAI_ENDPOINT", AZURE_OPENAI_ENDPOINT)
-        print("AZURE_OPENAI_DEPLOYMENT", AZURE_OPENAI_DEPLOYMENT)
+        self.logger.info(f"AZURE_OPENAI_API_VERSION: {AZURE_OPENAI_API_VERSION}")
+        self.logger.info(f"AZURE_OPENAI_DEPLOYMENT: {AZURE_OPENAI_DEPLOYMENT}")
 
         self.client = AzureOpenAI(
             api_key=AZURE_OPENAI_API_KEY,
@@ -92,6 +93,7 @@ class LLMEntityExtraction:
             system_prompt=self.system_message_expansion_prompt,
             user_prompt=address,
             response_format=self.response_format_expansion,
+            logger=self.logger,
         )
 
     def parse_address(self, address: str) -> dict:
@@ -101,4 +103,5 @@ class LLMEntityExtraction:
             system_prompt=self.system_message_extraction_prompt,
             user_prompt=address,
             response_format=self.response_format_extraction,
+            logger=self.logger,
         )

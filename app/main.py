@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     global llm_extractor
     try:
-        llm_extractor = LLMEntityExtraction()
+        llm_extractor = LLMEntityExtraction(logger=logger)
     except Exception as e:
         logger.error(f"Failed to initialize LLMEntityExtraction: {e}")
     yield
@@ -80,6 +80,26 @@ async def parse_address(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/v1/address/parse/libpostal/batch", tags=["Address"])
+async def expand_address_libpostal_batch(addresses: List[Address]):
+    """
+    Parse addresses passed in as an array of addresses
+
+
+    Parameters:
+    - **addresses**: List of address objects
+    """
+    try:
+        address_strings = [address.freeformAddress for address in addresses]
+        executor = batch_executor.BatchExecutor(
+            func=libpostal_parse_address, num_threads=5, delay=0.5
+        )
+        results = executor.execute_ordered(address_strings)
+        return {"parsed_addresses": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get(
     "/api/v1/address/expand/libpostal",
     response_model=ExpandAddressResponse,
@@ -118,7 +138,7 @@ async def expand_address_libpostal_batch(addresses: List[Address]):
         executor = batch_executor.BatchExecutor(
             func=libpostal_expand_address, num_threads=5, delay=0.5
         )
-        results = executor.execute(address_strings)
+        results = executor.execute_ordered(address_strings)
         return {"expanded_addresses": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -243,3 +263,54 @@ async def sanitize_address(payload: AddressRequest):
 
     except GeocodingError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+
+@app.post("/api/v1/address/sanitize/batch", tags=["Address"])
+async def sanitize_address_batch(payloads: List[AddressRequest]):
+    """
+    Sanitize a batch of addresses using the specified geocoding strategy.
+    
+    Parameters:
+    - **payloads**: List of AddressRequest objects
+    """
+    try:
+        def process_address(payload: AddressRequest):
+            try:
+                # Check the use_libpostal flag from the payload
+                if payload.use_libpostal:
+                    expanded_address_dict = libpostal_expand_address(payload.address)
+                    if "expanded_address" in expanded_address_dict:
+                        expanded_address = expanded_address_dict["expanded_address"]
+                    else:
+                        raise ValueError("Expanded address not found in libpostal response")
+                else:
+                    expanded_address = payload.address
+                
+                # Get the requested strategy
+                strategy = StrategyFactory.get_strategy(payload.strategy)
+                
+                # Execute geocoding
+                address_results = strategy.geocode(
+                    address=expanded_address,
+                    country_code=payload.country_code,
+                    max_results=payload.max_results
+                )
+                
+                # Build metadata
+                metadata = {
+                    "query": payload.address,
+                    "country": payload.country_code,
+                    "timestamp": datetime.utcnow(),
+                    "totalResults": len(address_results),
+                }
+                
+                return AddressResponse(metadata=metadata, addresses=address_results)
+            except Exception as e:
+                return {"error": str(e), "query": payload.address}
+
+        executor = batch_executor.BatchExecutor(func=process_address, num_threads=5, delay=0.5)
+        results = executor.execute_ordered(payloads)
+        return {"sanitized_addresses": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
