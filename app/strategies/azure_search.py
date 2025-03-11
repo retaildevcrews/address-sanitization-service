@@ -107,12 +107,14 @@ class AzureMapsStrategy(GeocodingStrategy):
                 streetName=address_info.get("streetName", ""),
                 municipality=address_info.get("municipality", ""),
                 municipalitySubdivision=address_info.get("municipalitySubdivision", ""),
+                countrySubdivision=address_info.get("countrySubdivision", ""),
                 countrySecondarySubdivision=address_info.get(
                     "countrySecondarySubdivision", ""
                 ),
                 countryTertiarySubdivision=address_info.get(
                     "countryTertiarySubdivision", ""
                 ),
+                country=address_info.get("country", ""),
                 neighborhood=address_info.get("neighborhood", ""),
                 postalCode=address_info.get("postalCode", ""),
                 countryCode=self._get_country_code(address_info, country_code),

@@ -1,14 +1,17 @@
 from openai import AzureOpenAI
+from openai import BadRequestError
+import json
+import ast
 
 """
 This module provides utility functions for interacting with Azure OpenAI models.
 """
-import json
 
 
 def _call_model(
     client: AzureOpenAI,
     model_deployment,
+    logger,
     messages,
     response_format=None,
     max_tokens=3200,
@@ -16,19 +19,30 @@ def _call_model(
     top_p=None,
 ):
 
-    completion = client.chat.completions.create(
-        model=model_deployment,
-        messages=messages,
-        response_format=response_format,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        top_p=top_p,
-    )
-    return json.loads(completion.choices[0].message.content)
+    try:
+        completion = client.chat.completions.create(
+            model=model_deployment,
+            messages=messages,
+            response_format=response_format,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+        )
+        return json.loads(completion.choices[0].message.content)
+    except BadRequestError as e:
+        try:
+            logger.error(f"BadRequestError: {e}")
+            error = ast.literal_eval(str(e).split(' - ')[1])
+            return {"error": error['error']['code']}
+        except:
+            return {"error": str(e)}
+    except Exception as e:
+        raise
 
 def call_model(
     client: AzureOpenAI,
     model_deployment,
+    logger,
     system_prompt,
     user_prompt,
     response_format=None,
@@ -51,11 +65,11 @@ def call_model(
         {"role": "user", "content": user_prompt},
     ]
 
-    return _call_model(client, model_deployment, messages, response_format)
+    return _call_model(client, model_deployment, logger, messages, response_format)
 
 
 def call_model_batch(
-    client: AzureOpenAI, model_deployment, system_prompt, user_prompts, response_format
+    client: AzureOpenAI, model_deployment, logger, system_prompt, user_prompts, response_format
 ):
     """
     Calls the Azure OpenAI model with a batch of user prompts.
@@ -75,4 +89,4 @@ def call_model_batch(
     messages = [{"role": "system", "content": system_prompt}] + [
         {"role": "user", "content": user_prompt} for user_prompt in user_prompts
     ]
-    return _call_model(client, model_deployment, messages, response_format)["responses"]
+    return _call_model(client, model_deployment, logger, messages, response_format)["responses"]
