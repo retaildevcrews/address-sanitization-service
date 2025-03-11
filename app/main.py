@@ -186,29 +186,31 @@ async def expand_address_libpostal_batch(addresses: List[Address]):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Uncomment this section if you want to allow dynamic updates to the address expansion prompt
 
-@app.put("/api/v1/address/prompt/expansion", tags=["Address"])
-async def update_address_expansion_prompt(prompt_data: SystemPrompt):
-    """
-    Update the address expansion system prompt dynamically at runtime.
-    """
-    try:
-        config_manager.set_address_expansion_prompt(prompt_data.system_prompt)
-        return {"message": "Address expansion system prompt updated successfully", "new prompt": prompt_data.system_prompt}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.put("/api/v1/address/prompt/expansion", tags=["Address"])
+# async def update_address_expansion_prompt(prompt_data: SystemPrompt):
+#     """
+#     Update the address expansion system prompt dynamically at runtime.
+#     """
+#     try:
+#         config_manager.set_address_expansion_prompt(prompt_data.system_prompt)
+#         return {"message": "Address expansion system prompt updated successfully", "new prompt": prompt_data.system_prompt}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
+# Uncomment this section if you want to allow dynamic updates to the address extraction prompt
 
-@app.put("/api/v1/address/prompt/extraction", tags=["Address"])
-async def update_address_extraction_prompt(prompt_data: SystemPrompt):
-    """
-    Update the address extraction system prompt dynamically at runtime.
-    """
-    try:
-        config_manager.set_address_extraction_prompt(prompt_data.system_prompt)
-        return {"message": "Address extraction system prompt updated successfully", "new prompt": prompt_data.system_prompt}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.put("/api/v1/address/prompt/extraction", tags=["Address"])
+# async def update_address_extraction_prompt(prompt_data: SystemPrompt):
+#     """
+#     Update the address extraction system prompt dynamically at runtime.
+#     """
+#     try:
+#         config_manager.set_address_extraction_prompt(prompt_data.system_prompt)
+#         return {"message": "Address extraction system prompt updated successfully", "new prompt": prompt_data.system_prompt}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/v1/address/parse/llm", tags=["Address"])
