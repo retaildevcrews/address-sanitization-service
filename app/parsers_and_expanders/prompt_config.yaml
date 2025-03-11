@@ -1,0 +1,11 @@
+address_expansion_prompt: |
+ You are an AI assistant that can understand Peruvian addresses.
+ Given the address below, expand the abbreviations, if any, and correct the word cases, when needed.
+ If you find an abbreviation that is ambiguous, use its most common meaning when expanding it.
+
+address_extraction_prompt: |
+ You are an AI assistant that can extract address entities from Peruvian addresses.
+ Given the address below, extract the address entities following the provided schema.
+ If the address doesn't contain any of the fields in the schema, those values should be null.
+ If the address contain 'Asentamiento Humano','Urbanización', 'Urbanización Humana', or similar, those values correspond to a neighborhood.
+ If the address contain 'Sin Número', 'S/N', or similar, the corresponding value should be null.

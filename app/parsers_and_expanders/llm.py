@@ -28,7 +28,7 @@ def generate_response_format(file_name, file_path=None):
     }
 
 class LLMEntityExtraction:
-    def __init__(self, logger=None):
+    def __init__(self, address_expansion_prompt: str, address_extraction_prompt: str, logger=None):
         self.logger = logger or logging.getLogger(__name__)
         AZURE_OPENAI_API_KEY = getenv("AZURE_OPENAI_API_KEY")
         AZURE_OPENAI_API_VERSION = getenv("AZURE_OPENAI_API_VERSION")
@@ -72,25 +72,16 @@ class LLMEntityExtraction:
             "address_entity_batch_schema.json"
         )
 
-        self.system_message_expansion_prompt = """
-            You are an AI assistant that can understand Peruvian addresses.
-            Given the address below, expand the abbreviations, if any, and correct the word cases, when needed.
-            If you find an abbreviation that is ambiguous, use its most common meaning when expanding it.
-            """
+        self.address_expansion_prompt = address_expansion_prompt
 
-        self.system_message_extraction_prompt = """
-            You are an AI assistant that can extract address entities from Peruvian addresses.
-            Given the address below, extract the address entities following the provided schema.
-            If the address doesn't contain any of the fields in the schema, those values should be null.
-            If the address contain 'Asentamiento Humano','Urbanización', 'Urbanización Humana', or similar, those values correspond to a neighborhood.
-            If the address contain 'Sin Número', 'S/N', or similar, the corresponding value should be null.
-            """
+        self.address_extraction_prompt = address_extraction_prompt
+
 
     def expand_address(self, address: str) -> dict:
         return call_model(
             client=self.client,
             model_deployment=self.model_deployment,
-            system_prompt=self.system_message_expansion_prompt,
+            system_prompt=self.address_expansion_prompt,
             user_prompt=address,
             response_format=self.response_format_expansion,
             logger=self.logger,
@@ -100,7 +91,7 @@ class LLMEntityExtraction:
         return call_model(
             client=self.client,
             model_deployment=self.model_deployment,
-            system_prompt=self.system_message_extraction_prompt,
+            system_prompt=self.address_extraction_prompt,
             user_prompt=address,
             response_format=self.response_format_extraction,
             logger=self.logger,

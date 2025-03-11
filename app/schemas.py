@@ -309,3 +309,18 @@ class ParseAddressResponse(BaseModel):
                 },
             }
         }
+
+
+# ========================
+# Prompt Schemas
+# ========================
+class SystemPrompt(BaseModel):
+    """
+    Represents the system prompt for the LLM.
+    """
+
+    system_prompt: str = Field(
+        ...,
+        example="You are a geocoding service that provides address expansion and parsing.",
+        description="System prompt for the LLM",
+    )
