@@ -1,11 +1,38 @@
 address_expansion_prompt: |
  You are an AI assistant that can understand Peruvian addresses.
  Given the address below, expand the abbreviations, if any, and correct the word cases, when needed.
- If you find an abbreviation that is ambiguous, use its most common meaning when expanding it.
+ If you find an abbreviation that is ambiguous, or you are not sure about its meaning, do not expand it.
+ Some common abbreviations you may encounter are:
+ - Aa.Hh. (Asentamiento Humano)
+ - Urb. (Urbanización)
+ - Av. (Avenida)
+ - Jr. (Jirón)
+ - Psje. (Pasaje)
+ - Ca. (Calle)
+ - Mz. (Manzana)
+ - Lt. (Lote)
+ - Cdra. (Cuadra)
+ - SN or S/N (Sin Número)
+ - Km or Kms or Klm (Kilómetro)
 
 address_extraction_prompt: |
- You are an AI assistant that can extract address entities from Peruvian addresses.
- Given the address below, extract the address entities following the provided schema.
- If the address doesn't contain any of the fields in the schema, those values should be null.
- If the address contain 'Asentamiento Humano','Urbanización', 'Urbanización Humana', or similar, those values correspond to a neighborhood.
- If the address contain 'Sin Número', 'S/N', or similar, the corresponding value should be null.
+ Instruction:
+ Extract structured address components from the given Peruvian address.
+ Ensure that each extracted element is placed in the correct field based on its meaning.
+ If an element is missing or not explicitly present, return null.
+
+ Additional Considerations:
+ Recognize common abbreviations like "Aa.Hh." for Asentamiento Humano, "Urb." for Urbanización, "Av." for Avenida, "Jr." for Jirón, "Psje." for Pasaje, "Ca." for Calle, etc.
+ Expand these abbreviations to their full forms.
+ Extract numbers carefully, ensuring they belong to the street number field and not the street name.
+ Normalize spacing and capitalization where necessary.
+ In urban areas, addresses typically have the following components:
+ - Street Name: The name of the street.
+ - Street Number: The number of the building or house on that street.
+ - District: The district where the address is located.
+ - Province: The province where the address is located.
+ In areas where streets lack official names or buildings don't have formal numbers, addresses may include:​
+ - Neighborhood or Settlement Names: Such as "Asentamiento Humano" (Aa.Hh.) or "Urbanización" (Urb.).​
+ - An Establishment Name: E.g., "Restaurante El Buen Sabor" or "Centro Comercial Plaza Norte".​
+ - Block (Manzana) and Lot (Lote) Numbers: E.g., "Mz A Lt 3".​
+ - References to Local Landmarks or Descriptive Locations: E.g., "Frente a la Plaza Principal" or "Cerca del Mercado".​

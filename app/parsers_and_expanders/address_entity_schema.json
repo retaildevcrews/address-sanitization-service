@@ -2,55 +2,67 @@
     "type": "object",
     "properties": {
       "streetName": {
-        "type": ["string", "null"]
+        "type": ["string", "null"],
+        "description": "The name of the street, avenue, boulevard, etc."
       },
       "streetNumber": {
-        "type": ["string", "null"]
+        "type": ["string", "null"],
+        "description": "The specific numeric or alphanumeric identifier for a property."
       },
-      "block": {
-        "type": ["string", "null"]
+      "unitNumber": {
+        "type": ["string", "null"],
+        "description": "The unit number within a building or complex."
       },
-      "lot": {
-        "type": ["string", "null"]
+      "district": {
+        "type": ["string", "null"],
+        "description": "The administrative district of the address."
       },
-      "neighbourhood": {
-        "type": ["string", "null"]
-      },
-      "municipality": {
-        "type": ["string", "null"]
-      },
-      "municipalitySubdivision": {
-        "type": ["string", "null"]
-      },
-      "country": {
-        "type": ["string", "null"]
-      },
-      "countryCode": {
-        "type": ["string", "null"]
-      },
-      "countrySubdivision": {
-        "type": ["string", "null"]
-      },
-      "countrySecondarySubdivision": {
-        "type": ["string", "null"]
+      "province": {
+        "type": ["string", "null"],
+        "description": "The province in which the address is located."
       },
       "postalCode": {
-        "type": ["number", "null"]
+        "type": ["number", "null"],
+        "description": "The postal code for the address."
+      },
+      "country": {
+        "type": ["string", "null"],
+        "description": "The country of the address."
+      },
+      "neighborhood": {
+        "type": ["string", "null"],
+        "description": "A smaller local area, or settlement, often referred to as 'Asentamiento Humano' (Aa.Hh.), 'Urbanización' (Urb.), etc."
+      },
+      "block": {
+        "type": ["string", "null"],
+        "description": "The block number within a neighbourhood or urbanization."
+      },
+      "lot": {
+        "type": ["string", "null"],
+        "description": "The lot number within a block."
+      },
+      "establishment": {
+        "type": ["string", "null"],
+        "description": "The name of the establishment or business at the address."
+      },
+      "reference": {
+        "type": ["string", "null"],
+        "description": "A reference to a local landmark or descriptive location. E.g. 'frente a la plaza', 'al costado de la iglesia', etc."
       }
     },
     "required": [
       "streetName",
       "streetNumber",
+      "unitNumber",
+      "district",
+      "province",
+      "postalCode",
+      "country",
+      "neighborhood",
       "block",
       "lot",
-      "neighbourhood",
-      "municipality",
-      "municipalitySubdivision",
-      "country",
-      "countryCode",
-      "countrySubdivision",
-      "countrySecondarySubdivision",
-      "postalCode"
+      "establishment",
+      "reference"
     ],
     "additionalProperties": false
 }
