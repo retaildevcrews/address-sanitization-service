@@ -14,6 +14,9 @@ address_expansion_prompt: |
  - Cdra. (Cuadra)
  - SN or S/N (Sin Número)
  - Km or Kms or Klm (Kilómetro)
+ - MCDO (Mercado)
+ - PTO (Puesto)
+ - CC (Centro Comercial)
 
 address_extraction_prompt: |
  Instruction:
@@ -22,9 +25,9 @@ address_extraction_prompt: |
  If an element is missing or not explicitly present, return null.
 
  Additional Considerations:
- Recognize common abbreviations like "Aa.Hh." for Asentamiento Humano, "Urb." for Urbanización, "Av." for Avenida, "Jr." for Jirón, "Psje." for Pasaje, "Ca." for Calle, etc.
+ Recognize common abbreviations like "Aa.Hh." for Asentamiento Humano, "Urb." for Urbanización, "Av." for Avenida, "Jr." for Jirón, "Psje." for Pasaje, "Ca." for Calle, "MCDO" for Mercado, "PTO" for Puesto, etc.
  Expand these abbreviations to their full forms.
- Extract numbers carefully, ensuring they belong to the street number field and not the street name.
+ Extract numbers carefully, ensuring they belong to the street number field and not the street name. Numbers may also belong to other fields, such as block, lot, or establishment.
  Normalize spacing and capitalization where necessary.
  In urban areas, addresses typically have the following components:
  - Street Name: The name of the street.
